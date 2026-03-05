@@ -8,7 +8,7 @@ import { getStrengthLevel, getStrengthColor, generateDevolutiva } from "@/lib/di
 import type { DiagnosticoAnswer, ScaleValue } from "@/types"
 import {
     FileEdit, ArrowRight, ArrowLeft, CheckCircle, Sparkles,
-    Play, ChevronDown, ChevronUp, RotateCcw, Zap, BookOpen,
+    Play, RotateCcw, Zap, BookOpen,
     Crown, Users, MessageSquare, Target, Lightbulb, Heart, Compass,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -352,7 +352,7 @@ export function DiagnosticoScreen() {
 
                 {/* Questions */}
                 <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
-                    {currentQuestions.map((q, idx) => (
+                    {currentQuestions.map((q) => (
                         <div key={q.id} className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
                             <div className="flex items-start gap-3 mb-4">
                                 <span className="text-[10px] font-bold text-white/20 mt-1">{q.order}.</span>

@@ -1,4 +1,4 @@
-import type { CategoryScore, DiagnosticoAnswer, DiagnosticoResult, Trilha, TrilhaType } from "@/types"
+import type { CategoryScore, DiagnosticoAnswer, Trilha, TrilhaType } from "@/types"
 import { CATEGORIES, DIAGNOSTICO_QUESTIONS, getPalestrasByCategory } from "@/data/capacite-data"
 
 /**
