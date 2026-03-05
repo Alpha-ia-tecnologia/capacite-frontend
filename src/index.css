@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  /* Brand-specific extended colors */
+  --color-brand-blue: #173DED;
+  --color-brand-navy: #000051;
+  --color-brand-dark: #000029;
+  --color-brand-pink: #FF1493;
+  --color-brand-cyan: #40E0D0;
+  --color-brand-grey: #BABABA;
+  --color-brand-light-grey: #DCDEE2;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+}
+
+/*
+  Color palette extracted from the brand guide (image 3.png):
+  - Black Russian #000029 → page background
+  - Alucard Night #000051 → sidebar / card surfaces
+  - Palatinate Blue #173DED → primary (buttons, active states, accents)
+  - Baby Grey #BABABA → muted text
+  - Grey Placidity #DCDEE2 → secondary text / borders
+  - Hot Pink ~#FF1493 → complementary accent (neon glow)
+  - Cyan ~#40E0D0 → complementary accent
+*/
+
+@layer base {
+  :root {
+    /* Dark-first palette matching the mockups */
+    --background: 233 100% 8%;
+    /* #000029 - Black Russian */
+    --foreground: 0 0% 98%;
+    /* near-white text */
+
+    --card: 233 100% 16%;
+    /* #000051 - Alucard Night */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 233 100% 16%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 231 89% 51%;
+    /* #173DED - Palatinate Blue */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 233 100% 12%;
+    /* slightly lighter than bg */
+    --secondary-foreground: 0 0% 86%;
+    /* #DCDEE2 */
+
+    --muted: 233 50% 14%;
+    --muted-foreground: 0 0% 73%;
+    /* #BABABA - Baby Grey */
+
+    --accent: 326 100% 54%;
+    /* #FF1493 - Hot Pink accent */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 233 40% 20%;
+    --input: 233 40% 20%;
+    --ring: 231 89% 51%;
+
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
