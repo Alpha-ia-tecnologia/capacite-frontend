@@ -72,47 +72,29 @@
   }
 }
 
-/*
-  Color palette extracted from the brand guide (image 3.png):
-  - Black Russian #000029 → page background
-  - Alucard Night #000051 → sidebar / card surfaces
-  - Palatinate Blue #173DED → primary (buttons, active states, accents)
-  - Baby Grey #BABABA → muted text
-  - Grey Placidity #DCDEE2 → secondary text / borders
-  - Hot Pink ~#FF1493 → complementary accent (neon glow)
-  - Cyan ~#40E0D0 → complementary accent
-*/
-
 @layer base {
-  :root {
-    /* Dark-first palette matching the mockups */
+  /* ─── Dark Theme (default) ─── */
+  :root,
+  :root.dark {
     --background: 233 100% 8%;
-    /* #000029 - Black Russian */
     --foreground: 0 0% 98%;
-    /* near-white text */
 
     --card: 233 100% 16%;
-    /* #000051 - Alucard Night */
     --card-foreground: 0 0% 98%;
 
     --popover: 233 100% 16%;
     --popover-foreground: 0 0% 98%;
 
     --primary: 231 89% 51%;
-    /* #173DED - Palatinate Blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 233 100% 12%;
-    /* slightly lighter than bg */
     --secondary-foreground: 0 0% 86%;
-    /* #DCDEE2 */
 
     --muted: 233 50% 14%;
     --muted-foreground: 0 0% 73%;
-    /* #BABABA - Baby Grey */
 
     --accent: 326 100% 54%;
-    /* #FF1493 - Hot Pink accent */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -123,6 +105,87 @@
     --ring: 231 89% 51%;
 
     --radius: 0.75rem;
+
+    /* Theme-aware surface tokens */
+    --surface-bg: #000029;
+    --surface-sidebar: #000029;
+    --surface-card: rgba(255, 255, 255, 0.02);
+    --surface-card-hover: rgba(255, 255, 255, 0.05);
+    --surface-border: rgba(255, 255, 255, 0.05);
+    --surface-border-hover: rgba(255, 255, 255, 0.1);
+    --surface-input: rgba(255, 255, 255, 0.03);
+    --surface-overlay: rgba(0, 0, 0, 0.6);
+
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-muted: rgba(255, 255, 255, 0.3);
+    --text-subtle: rgba(255, 255, 255, 0.15);
+
+    --tooltip-bg: #0a0a3a;
+
+    --search-bar-bg: #000035;
+    --search-bar-border: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+
+    --feature-card-bg: rgba(10, 10, 58, 0.8);
+    --feature-card-shadow: none;
+    --feature-card-btn-bg: #0a0a3a;
+  }
+
+  /* ─── Light Theme ─── */
+  :root.light {
+    --background: 220 20% 97%;
+    --foreground: 224 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 30% 15%;
+
+    --primary: 231 89% 51%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 93%;
+    --secondary-foreground: 224 20% 30%;
+
+    --muted: 220 15% 93%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 326 100% 54%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 231 89% 51%;
+
+    --radius: 0.75rem;
+
+    /* Theme-aware surface tokens */
+    --surface-bg: #f5f6fa;
+    --surface-sidebar: #ffffff;
+    --surface-card: rgba(0, 0, 0, 0.02);
+    --surface-card-hover: rgba(0, 0, 0, 0.04);
+    --surface-border: rgba(0, 0, 0, 0.08);
+    --surface-border-hover: rgba(0, 0, 0, 0.15);
+    --surface-input: rgba(0, 0, 0, 0.03);
+    --surface-overlay: rgba(0, 0, 0, 0.3);
+
+    --text-primary: #1a1d2e;
+    --text-secondary: rgba(26, 29, 46, 0.65);
+    --text-muted: rgba(26, 29, 46, 0.70);
+    --text-subtle: rgba(26, 29, 46, 0.45);
+
+    --tooltip-bg: #ffffff;
+
+    --search-bar-bg: #ffffff;
+    --search-bar-border: linear-gradient(135deg, rgba(0,0,0,0.12), rgba(0,0,0,0.06));
+
+    --feature-card-bg: #ffffff;
+    --feature-card-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+    --feature-card-btn-bg: #ffffff;
   }
 }
 
@@ -142,4 +205,109 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIGHT THEME — Global overrides
+   These rules adapt utility classes designed for dark mode so they
+   remain legible on light backgrounds without editing every component.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Text color overrides ── */
+:root.light .text-white {
+  color: #1a1d2e !important;
+}
+
+:root.light .text-white\/5  { color: rgba(26, 29, 46, 0.25) !important; }
+:root.light .text-white\/8  { color: rgba(26, 29, 46, 0.35) !important; }
+:root.light .text-white\/10 { color: rgba(26, 29, 46, 0.40) !important; }
+:root.light .text-white\/15 { color: rgba(26, 29, 46, 0.50) !important; }
+:root.light .text-white\/20 { color: rgba(26, 29, 46, 0.60) !important; }
+:root.light .text-white\/25 { color: rgba(26, 29, 46, 0.65) !important; }
+:root.light .text-white\/30 { color: rgba(26, 29, 46, 0.70) !important; }
+:root.light .text-white\/40 { color: rgba(26, 29, 46, 0.78) !important; }
+:root.light .text-white\/50 { color: rgba(26, 29, 46, 0.84) !important; }
+:root.light .text-white\/60 { color: rgba(26, 29, 46, 0.88) !important; }
+:root.light .text-white\/70 { color: rgba(26, 29, 46, 0.92) !important; }
+:root.light .text-white\/80 { color: rgba(26, 29, 46, 0.95) !important; }
+:root.light .text-white\/90 { color: rgba(26, 29, 46, 0.98) !important; }
+
+/* Hardcoded hex background overrides */
+:root.light .bg-\[\#000029\] { background-color: #f5f6fa !important; }
+:root.light .bg-\[\#000040\] { background-color: #eef0f6 !important; }
+:root.light .bg-\[\#000051\] { background-color: #ffffff !important; }
+:root.light .bg-\[\#0a0a3a\] { background-color: #ffffff !important; }
+:root.light .bg-\[\#000033\] { background-color: #f0f1f7 !important; }
+
+/* White-alpha backgrounds → dark-alpha */
+:root.light .bg-white\/\[0\.02\] { background-color: rgba(0, 0, 0, 0.02) !important; }
+:root.light .bg-white\/\[0\.03\] { background-color: rgba(0, 0, 0, 0.03) !important; }
+:root.light .bg-white\/\[0\.04\] { background-color: rgba(0, 0, 0, 0.04) !important; }
+:root.light .bg-white\/\[0\.05\] { background-color: rgba(0, 0, 0, 0.04) !important; }
+:root.light .bg-white\/5  { background-color: rgba(0, 0, 0, 0.04) !important; }
+:root.light .bg-white\/8  { background-color: rgba(0, 0, 0, 0.05) !important; }
+:root.light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.06) !important; }
+:root.light .bg-white\/15 { background-color: rgba(0, 0, 0, 0.07) !important; }
+:root.light .bg-white\/20 { background-color: rgba(0, 0, 0, 0.08) !important; }
+
+/* ── Border overrides ── */
+:root.light .border-white\/5  { border-color: rgba(0, 0, 0, 0.08) !important; }
+:root.light .border-white\/8  { border-color: rgba(0, 0, 0, 0.10) !important; }
+:root.light .border-white\/10 { border-color: rgba(0, 0, 0, 0.12) !important; }
+:root.light .border-white\/15 { border-color: rgba(0, 0, 0, 0.14) !important; }
+:root.light .border-white\/20 { border-color: rgba(0, 0, 0, 0.16) !important; }
+:root.light .border-white\/30 { border-color: rgba(0, 0, 0, 0.15) !important; }
+:root.light .border-white\/\[0\.03\] { border-color: rgba(0, 0, 0, 0.06) !important; }
+:root.light .border-white\/\[0\.05\] { border-color: rgba(0, 0, 0, 0.08) !important; }
+:root.light .border-white { border-color: #1a1d2e !important; }
+
+/* ── Placeholder text ── */
+:root.light .placeholder\:text-white\/15::placeholder { color: rgba(26, 29, 46, 0.30) !important; }
+:root.light .placeholder\:text-white\/20::placeholder { color: rgba(26, 29, 46, 0.35) !important; }
+:root.light .placeholder\:text-white\/30::placeholder { color: rgba(26, 29, 46, 0.40) !important; }
+
+/* ── Hover overrides ── */
+:root.light .hover\:text-white:hover { color: #1a1d2e !important; }
+:root.light .hover\:text-white\/40:hover { color: rgba(26, 29, 46, 0.50) !important; }
+:root.light .hover\:text-white\/50:hover { color: rgba(26, 29, 46, 0.55) !important; }
+:root.light .hover\:text-white\/60:hover { color: rgba(26, 29, 46, 0.65) !important; }
+:root.light .hover\:bg-white\/5:hover  { background-color: rgba(0, 0, 0, 0.05) !important; }
+:root.light .hover\:bg-white\/10:hover { background-color: rgba(0, 0, 0, 0.07) !important; }
+:root.light .hover\:bg-white\/\[0\.04\]:hover { background-color: rgba(0, 0, 0, 0.05) !important; }
+:root.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(0, 0, 0, 0.06) !important; }
+:root.light .hover\:border-white\/10:hover { border-color: rgba(0, 0, 0, 0.12) !important; }
+:root.light .hover\:border-white\/15:hover { border-color: rgba(0, 0, 0, 0.14) !important; }
+:root.light .hover\:border-white\/20:hover { border-color: rgba(0, 0, 0, 0.16) !important; }
+
+/* ── Focus overrides ── */
+:root.light .focus\:border-white\/15:focus { border-color: rgba(0, 0, 0, 0.18) !important; }
+
+/* ── Ring / divide ── */
+:root.light .divide-white\/5 > * + * { border-color: rgba(0, 0, 0, 0.07) !important; }
+:root.light .ring-white\/10 { --tw-ring-color: rgba(0, 0, 0, 0.10) !important; }
+
+/* ── Gradient text stays readable ── */
+:root.light .from-white { --tw-gradient-from: #1a1d2e !important; }
+:root.light .to-white\/50 { --tw-gradient-to: rgba(26, 29, 46, 0.50) !important; }
+:root.light .to-white\/60 { --tw-gradient-to: rgba(26, 29, 46, 0.60) !important; }
+:root.light .to-white\/70 { --tw-gradient-to: rgba(26, 29, 46, 0.70) !important; }
+
+/* ── Scrollbar styling ── */
+:root.light ::-webkit-scrollbar {
+  width: 6px;
+}
+:root.light ::-webkit-scrollbar-track {
+  background: transparent;
+}
+:root.light ::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+/* ── Shadow overrides for cards ── */
+:root.light .shadow-xl {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+:root.light .shadow-2xl {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.10) !important;
 }

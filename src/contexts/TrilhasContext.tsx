@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import type { Trilha, TrilhaProgress } from "@/types"
-import { storage } from "@/lib/storage"
+import { trilhas as trilhasApi, type ApiTrilha } from "@/lib/api"
 
 interface TrilhasState {
     /** User's enrolled trilhas */
@@ -10,66 +10,159 @@ interface TrilhasState {
     /** Total watched palestras across all trilhas */
     totalWatched: number
     /** Enroll in a trilha */
-    enrollTrilha: (trilha: Trilha) => void
+    enrollTrilha: (trilha: Trilha) => Promise<void>
     /** Mark a palestra as watched in a trilha */
-    markPalestraWatched: (trilhaId: string, palestraId: string) => void
+    markPalestraWatched: (trilhaId: string, palestraId: string) => Promise<void>
     /** Check if a palestra is watched in a trilha */
     isPalestraWatched: (trilhaId: string, palestraId: string) => boolean
     /** Get progress % for a trilha */
     getProgress: (trilhaId: string) => number
     /** Count of completed trilhas */
     completedCount: number
+    /** Loading state */
+    loading: boolean
+    /** Load trilhas from API */
+    loadTrilhas: () => Promise<void>
 }
 
 const TrilhasContext = createContext<TrilhasState | null>(null)
 
+function apiTrilhaTypeToLocal(type: string): "impacto" | "aprofundamento" | "custom" {
+    return type.toLowerCase() as "impacto" | "aprofundamento" | "custom"
+}
+
+function apiToTrilha(api: ApiTrilha): { trilha: Trilha; prog: TrilhaProgress } {
+    const watchedIds = api.progress
+        ?.filter(p => p.watched)
+        .map(p => p.palestraId) ?? []
+
+    const isComplete = api.isComplete ?? (api.palestraIds.length > 0 && watchedIds.length === api.palestraIds.length)
+
+    return {
+        trilha: {
+            id: api.id,
+            title: api.name,
+            description: api.description ?? "",
+            type: apiTrilhaTypeToLocal(api.type),
+            categoryId: "", // Will be derived from palestras if needed
+            palestraIds: api.palestraIds as string[],
+            createdAt: api.createdAt,
+        },
+        prog: {
+            trilhaId: api.id,
+            watchedPalestraIds: watchedIds,
+            startedAt: api.createdAt,
+            completedAt: isComplete ? new Date().toISOString() : null,
+        },
+    }
+}
+
 export function TrilhasProvider({ children }: { children: ReactNode }) {
-    const [trilhas, setTrilhas] = useState<Trilha[]>(() =>
-        storage.get<Trilha[]>("trilhas") ?? []
-    )
-    const [progress, setProgress] = useState<Record<string, TrilhaProgress>>(() =>
-        storage.get<Record<string, TrilhaProgress>>("trilhas_progress") ?? {}
-    )
+    const [trilhas, setTrilhas] = useState<Trilha[]>([])
+    const [progress, setProgress] = useState<Record<string, TrilhaProgress>>({})
+    const [loading, setLoading] = useState(false)
 
-    useEffect(() => { storage.set("trilhas", trilhas) }, [trilhas])
-    useEffect(() => { storage.set("trilhas_progress", progress) }, [progress])
+    const loadTrilhas = useCallback(async () => {
+        try {
+            const apiList = await trilhasApi.list()
+            const results = apiList.map(apiToTrilha)
 
-    const enrollTrilha = useCallback((trilha: Trilha) => {
-        setTrilhas(prev => {
-            if (prev.find(t => t.id === trilha.id)) return prev
-            return [...prev, trilha]
-        })
-        setProgress(prev => ({
-            ...prev,
-            [trilha.id]: {
-                trilhaId: trilha.id,
-                watchedPalestraIds: [],
-                startedAt: new Date().toISOString(),
-                completedAt: null,
-            },
-        }))
+            // Deduplicate: keep only the first trilha per name+type
+            const seen = new Map<string, typeof results[0]>()
+            const duplicateIds: string[] = []
+
+            for (const r of results) {
+                const key = `${r.trilha.title}::${r.trilha.type}`
+                if (seen.has(key)) {
+                    duplicateIds.push(r.trilha.id)
+                } else {
+                    seen.set(key, r)
+                }
+            }
+
+            // Delete duplicates from backend silently
+            for (const id of duplicateIds) {
+                trilhasApi.remove(id).catch(() => {})
+            }
+
+            const uniqueResults = [...seen.values()]
+            setTrilhas(uniqueResults.map(r => r.trilha))
+
+            const progMap: Record<string, TrilhaProgress> = {}
+            uniqueResults.forEach(r => {
+                progMap[r.trilha.id] = r.prog
+            })
+            setProgress(progMap)
+        } catch (err) {
+            console.error("Failed to load trilhas:", err)
+        }
     }, [])
 
-    const markPalestraWatched = useCallback((trilhaId: string, palestraId: string) => {
-        setProgress(prev => {
-            const existing = prev[trilhaId]
-            if (!existing) return prev
-            if (existing.watchedPalestraIds.includes(palestraId)) return prev
+    const enrollTrilha = useCallback(async (trilha: Trilha) => {
+        // Avoid duplicates by name + type (not id, since suggested trilhas get new ids each time)
+        const duplicate = trilhas.find(t => t.title === trilha.title && t.type === trilha.type)
+        if (duplicate) return
 
-            const updatedWatched = [...existing.watchedPalestraIds, palestraId]
-            const trilha = trilhas.find(t => t.id === trilhaId)
-            const isComplete = trilha ? updatedWatched.length >= trilha.palestraIds.length : false
+        setLoading(true)
+        try {
+            const created = await trilhasApi.create({
+                name: trilha.title,
+                description: trilha.description,
+                type: trilha.type.toUpperCase() as "IMPACTO" | "APROFUNDAMENTO" | "CUSTOM",
+                palestraIds: trilha.palestraIds,
+            })
 
-            return {
+            const { trilha: newTrilha, prog } = apiToTrilha(created)
+            setTrilhas(prev => [...prev, newTrilha])
+            setProgress(prev => ({ ...prev, [newTrilha.id]: prog }))
+        } catch (err) {
+            console.error("Failed to enroll trilha:", err)
+            // Fallback: add locally
+            setTrilhas(prev => [...prev, trilha])
+            setProgress(prev => ({
                 ...prev,
-                [trilhaId]: {
-                    ...existing,
-                    watchedPalestraIds: updatedWatched,
-                    completedAt: isComplete ? new Date().toISOString() : null,
+                [trilha.id]: {
+                    trilhaId: trilha.id,
+                    watchedPalestraIds: [],
+                    startedAt: new Date().toISOString(),
+                    completedAt: null,
                 },
-            }
-        })
+            }))
+        } finally {
+            setLoading(false)
+        }
     }, [trilhas])
+
+    const markPalestraWatched = useCallback(async (trilhaId: string, palestraId: string) => {
+        const existing = progress[trilhaId]
+        if (!existing) return
+        if (existing.watchedPalestraIds.includes(palestraId)) return
+
+        // Optimistic update
+        const updatedWatched = [...existing.watchedPalestraIds, palestraId]
+        const trilha = trilhas.find(t => t.id === trilhaId)
+        const isComplete = trilha ? updatedWatched.length >= trilha.palestraIds.length : false
+
+        setProgress(prev => ({
+            ...prev,
+            [trilhaId]: {
+                ...existing,
+                watchedPalestraIds: updatedWatched,
+                completedAt: isComplete ? new Date().toISOString() : null,
+            },
+        }))
+
+        try {
+            await trilhasApi.markWatched(trilhaId, palestraId, true)
+        } catch (err) {
+            console.error("Failed to mark watched:", err)
+            // Revert on failure
+            setProgress(prev => ({
+                ...prev,
+                [trilhaId]: existing,
+            }))
+        }
+    }, [progress, trilhas])
 
     const isPalestraWatched = useCallback((trilhaId: string, palestraId: string): boolean => {
         return progress[trilhaId]?.watchedPalestraIds.includes(palestraId) ?? false
@@ -92,7 +185,7 @@ export function TrilhasProvider({ children }: { children: ReactNode }) {
         <TrilhasContext.Provider value={{
             trilhas, progress, totalWatched,
             enrollTrilha, markPalestraWatched, isPalestraWatched, getProgress,
-            completedCount,
+            completedCount, loading, loadTrilhas,
         }}>
             {children}
         </TrilhasContext.Provider>

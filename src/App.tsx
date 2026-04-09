@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { ThemeProvider } from "./contexts/ThemeContext"
 import { AuthProvider } from "./contexts/AuthContext"
 import { DiagnosticoProvider } from "./contexts/DiagnosticoContext"
 import { TrilhasProvider } from "./contexts/TrilhasContext"
@@ -17,6 +18,7 @@ import { GoldStarToast } from "./components/gamificacao/GoldStarToast"
 
 export function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <DiagnosticoProvider>
         <TrilhasProvider>
@@ -41,6 +43,7 @@ export function App() {
         </TrilhasProvider>
       </DiagnosticoProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
 

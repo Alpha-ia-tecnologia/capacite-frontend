@@ -101,7 +101,7 @@ export function PerguntasPalestrasScreen() {
                         <p className="text-[10px] uppercase tracking-widest text-white/20 mb-3">
                             Processamento Pós-Palestra
                         </p>
-                        <p className="text-xs text-white/30 mb-3">Gere perguntas personalizadas com DeepSeek AI</p>
+                        <p className="text-xs text-white/30 mb-3">Gere perguntas personalizadas com Capacite AI</p>
 
                         {/* Category filter */}
                         <select
@@ -206,7 +206,7 @@ export function PerguntasPalestrasScreen() {
                                 {loading && (
                                     <div className="flex flex-col items-center justify-center h-64">
                                         <Loader2 size={32} className="text-[#8B5CF6] animate-spin mb-3" />
-                                        <p className="text-white/50 text-sm animate-pulse">Gerando perguntas com DeepSeek AI...</p>
+                                        <p className="text-white/50 text-sm animate-pulse">Gerando perguntas com Capacite AI...</p>
                                     </div>
                                 )}
 
@@ -225,7 +225,7 @@ export function PerguntasPalestrasScreen() {
                                         </div>
                                         <h2 className="text-lg font-semibold text-white mb-2">Perguntas não geradas</h2>
                                         <p className="text-sm text-white/30 max-w-sm">
-                                            Gere perguntas personalizadas com DeepSeek AI para processamento pós-palestra e aprofundamento do conteúdo.
+                                            Gere perguntas personalizadas com Capacite AI para processamento pós-palestra e aprofundamento do conteúdo.
                                         </p>
                                         <button
                                             onClick={handleGenerate}

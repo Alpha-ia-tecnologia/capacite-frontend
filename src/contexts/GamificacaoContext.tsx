@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import type { GoldStar, StarMilestone, AppNotification } from "@/types"
 import { STAR_DEFINITIONS as DEFS } from "@/types"
-import { storage } from "@/lib/storage"
+import { gamificacao as gamApi } from "@/lib/api"
 
 interface GamificacaoState {
     /** Earned stars */
@@ -18,21 +18,45 @@ interface GamificacaoState {
     streakDays: number
     /** Update the streak */
     updateStreak: () => void
+    /** Load gamification data from API */
+    loadGamificacao: () => Promise<void>
+}
+
+const STAR_TYPE_MAP: Record<string, StarMilestone> = {
+    DIAGNOSTICO_COMPLETO: "diagnostico_completo",
+    PRIMEIRA_PALESTRA: "primeira_palestra",
+    TRILHA_COMPLETA: "trilha_completa",
+    DIAGNOSTICO_6MESES: "diagnostico_6meses",
+    TRES_TRILHAS: "tres_trilhas",
 }
 
 const GamificacaoContext = createContext<GamificacaoState | null>(null)
 
 export function GamificacaoProvider({ children }: { children: ReactNode }) {
-    const [stars, setStars] = useState<GoldStar[]>(() =>
-        storage.get<GoldStar[]>("gold_stars") ?? []
-    )
+    const [stars, setStars] = useState<GoldStar[]>([])
     const [pendingNotification, setPendingNotification] = useState<AppNotification | null>(null)
-    const [streakDays, setStreakDays] = useState<number>(() =>
-        storage.get<number>("streak_days") ?? 0
-    )
+    const [streakDays, setStreakDays] = useState<number>(0)
 
-    useEffect(() => { storage.set("gold_stars", stars) }, [stars])
-    useEffect(() => { storage.set("streak_days", streakDays) }, [streakDays])
+    const loadGamificacao = useCallback(async () => {
+        try {
+            const summary = await gamApi.getSummary()
+            setStreakDays(summary.streakDays)
+
+            const loadedStars: GoldStar[] = summary.goldStars.map(s => {
+                const milestone = STAR_TYPE_MAP[s.type] ?? (s.type.toLowerCase() as StarMilestone)
+                const def = DEFS[milestone]
+                return {
+                    milestone,
+                    earnedAt: s.earnedAt,
+                    title: def?.title ?? s.type,
+                    description: def?.description ?? "",
+                }
+            })
+            setStars(loadedStars)
+        } catch (err) {
+            console.error("Failed to load gamificacao:", err)
+        }
+    }, [])
 
     const hasStar = useCallback((milestone: StarMilestone): boolean => {
         return stars.some(s => s.milestone === milestone)
@@ -53,11 +77,14 @@ export function GamificacaoProvider({ children }: { children: ReactNode }) {
         setPendingNotification({
             id: crypto.randomUUID(),
             type: "star",
-            title: "⭐ Estrela Dourada!",
+            title: "Estrela Dourada!",
             message: `${def.title}: ${def.description}. Você merece!`,
             read: false,
             createdAt: new Date().toISOString(),
         })
+
+        // Notify backend asynchronously
+        gamApi.checkStars().catch(() => {})
 
         return true
     }, [stars])
@@ -67,28 +94,17 @@ export function GamificacaoProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const updateStreak = useCallback(() => {
-        const today = new Date().toISOString().split("T")[0]
-        const lastDate = storage.get<string>("last_streak_date")
-
-        if (lastDate === today) return // Already counted today
-
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayStr = yesterday.toISOString().split("T")[0]
-
-        if (lastDate === yesterdayStr) {
-            setStreakDays(prev => prev + 1)
-        } else {
-            setStreakDays(1) // Reset streak
-        }
-
-        storage.set("last_streak_date", today)
+        gamApi.updateStreak()
+            .then(res => {
+                setStreakDays(res.streakDays)
+            })
+            .catch(() => {})
     }, [])
 
     return (
         <GamificacaoContext.Provider value={{
             stars, pendingNotification, checkMilestone, dismissNotification,
-            hasStar, streakDays, updateStreak,
+            hasStar, streakDays, updateStreak, loadGamificacao,
         }}>
             {children}
         </GamificacaoContext.Provider>

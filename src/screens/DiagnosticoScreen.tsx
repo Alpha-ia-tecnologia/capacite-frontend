@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
 import { useGamificacao } from "@/contexts/GamificacaoContext"
@@ -50,16 +51,22 @@ export function DiagnosticoScreen() {
             questionId,
             value,
         }))
-        setTimeout(() => {
-            submitDiagnostico(answerArr)
-            checkMilestone("diagnostico_completo")
-            setPhase("results")
-        }, 2500)
+        submitDiagnostico(answerArr)
+            .then(() => {
+                checkMilestone("diagnostico_completo")
+                setPhase("results")
+            })
+            .catch(() => {
+                setPhase("results")
+            })
     }
 
-    const handleChooseTrilha = (index: 0 | 1) => {
+    const navigate = useNavigate()
+
+    const handleChooseTrilha = async (index: 0 | 1) => {
         if (suggestedTrilhas) {
-            enrollTrilha(suggestedTrilhas[index])
+            await enrollTrilha(suggestedTrilhas[index])
+            navigate("/trilhas")
         }
     }
 
@@ -335,27 +342,12 @@ export function DiagnosticoScreen() {
                     />
                 </div>
 
-                {/* Category indicator */}
-                <div className="flex gap-2 mb-6">
-                    {groups.map((g, i) => (
-                        <button
-                            key={g.category.id}
-                            onClick={() => setCurrentGroup(i)}
-                            className={cn(
-                                "flex-1 h-1 rounded-full transition-all duration-200",
-                                i === currentGroup ? "opacity-100" : i < currentGroup ? "opacity-60" : "opacity-20"
-                            )}
-                            style={{ backgroundColor: g.category.color }}
-                        />
-                    ))}
-                </div>
-
                 {/* Questions */}
-                <div className="flex-1 flex flex-col gap-6 overflow-y-auto">
+                <div className="flex-1 flex flex-col gap-6 overflow-y-auto max-w-3xl mx-auto w-full">
                     {currentQuestions.map((q) => (
                         <div key={q.id} className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
                             <div className="flex items-start gap-3 mb-4">
-                                <span className="text-[10px] font-bold text-white/20 mt-1">{q.order}.</span>
+                                <span className="text-sm font-bold text-white/30 mt-0.5">{q.order}.</span>
                                 <p className="text-sm text-white/80 leading-relaxed">{q.text}</p>
                             </div>
                             <div className="flex gap-2">
@@ -383,7 +375,7 @@ export function DiagnosticoScreen() {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4">
+                <div className="flex items-center justify-center gap-12 pt-4 border-t border-white/5 mt-4 max-w-3xl mx-auto w-full">
                     <button
                         onClick={() => setCurrentGroup(prev => Math.max(0, prev - 1))}
                         disabled={currentGroup === 0}
@@ -436,10 +428,17 @@ export function DiagnosticoScreen() {
 
 function StepCard({ number, title, description }: { number: string; title: string; description: string }) {
     return (
-        <div className="rounded-xl border border-white/5 bg-[#000051]/60 backdrop-blur-sm p-6">
+        <div
+            className="rounded-xl backdrop-blur-sm p-6"
+            style={{
+                backgroundColor: "var(--feature-card-bg)",
+                border: "1px solid var(--surface-border)",
+                boxShadow: "var(--feature-card-shadow, none)",
+            }}
+        >
             <span className="text-xs font-bold text-[#FF1493] tracking-widest uppercase">Passo {number}</span>
-            <h3 className="text-white font-semibold mt-2 mb-2">{title}</h3>
-            <p className="text-white/30 text-sm leading-relaxed">{description}</p>
+            <h3 className="font-semibold mt-2 mb-2" style={{ color: "var(--text-primary)" }}>{title}</h3>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>{description}</p>
         </div>
     )
 }

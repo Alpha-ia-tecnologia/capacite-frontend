@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { CATEGORIES as CAPACITE_CATS, PALESTRAS_CATALOG } from "@/data/capacite-data"
 import { aiSearch, type AISearchResult } from "@/lib/deepseek"
+import { ALL_SPEAKER_IMAGES } from "@/data/speakers-list"
 import {
     Search,
     Sparkles,
@@ -28,7 +29,6 @@ const FILTER_CATEGORIES = [
     { label: "Tudo", icon: "🔍", filter: null },
     { label: "Palestras", icon: "🎤", filter: "palestra" },
     { label: "Preletores", icon: "👤", filter: "preletor" },
-    { label: "Temas", icon: "💡", filter: "tema" },
     { label: "Insights", icon: "✨", filter: "insight" },
 ]
 
@@ -132,7 +132,7 @@ export function BuscaInteligenteScreen() {
                             Busca Inteligente
                         </h1>
                         <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FF1493]/10 text-[#FF1493] border border-[#FF1493]/20">
-                            DeepSeek AI
+                            Capacite AI
                         </span>
                     </div>
                     <p className="text-white/40 ml-[40px]">
@@ -147,14 +147,17 @@ export function BuscaInteligenteScreen() {
                         style={{
                             background: query
                                 ? "linear-gradient(135deg, #FF1493, #8B5CF6, #173DED)"
-                                : "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04))",
+                                : "var(--search-bar-border, linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)))",
                         }}
                     >
-                        <div className="flex items-center gap-3 rounded-2xl bg-[#000035] px-5 py-4">
+                        <div
+                            className="flex items-center gap-3 rounded-2xl px-5 py-4"
+                            style={{ backgroundColor: "var(--search-bar-bg)" }}
+                        >
                             {isSearching ? (
                                 <Loader2 size={22} className="text-[#FF1493] animate-spin shrink-0" />
                             ) : (
-                                <Search size={22} className="text-white/30 shrink-0" />
+                                <Search size={22} className="shrink-0" style={{ color: "var(--text-muted)" }} />
                             )}
                             <input
                                 ref={inputRef}
@@ -163,10 +166,12 @@ export function BuscaInteligenteScreen() {
                                 onChange={(e) => setQuery(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Pergunte qualquer coisa: 'Como melhorar comunicação com a equipe?'"
-                                className="flex-1 bg-transparent text-white text-base placeholder:text-white/25 outline-none"
+                                className="flex-1 bg-transparent text-base outline-none"
+                                style={{ color: "var(--text-primary)", }}
                             />
                             <button
-                                className="shrink-0 p-2 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors"
+                                className="shrink-0 p-2 rounded-lg transition-colors"
+                                style={{ color: "var(--text-muted)" }}
                                 title="Busca por voz (em breve)"
                             >
                                 <Mic size={18} />
@@ -280,7 +285,7 @@ export function BuscaInteligenteScreen() {
                                 </div>
                             </div>
                             <p className="text-white/50 text-sm animate-pulse">
-                                Buscando com DeepSeek AI...
+                                Buscando com Capacite AI...
                             </p>
                             <p className="text-white/20 text-xs mt-1">Analisando catálogo e gerando insights</p>
                         </div>
@@ -324,8 +329,31 @@ export function BuscaInteligenteScreen() {
     )
 }
 
+function findSpeakerImage(speakerName: string): string | undefined {
+    const exact = PALESTRAS_CATALOG.find(p => p.speaker === speakerName)?.speakerAvatar;
+    if (exact) return exact;
+
+    const normalizedName = speakerName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const words = normalizedName.split(/[^a-z0-9]+/).filter(w => w.length > 1);
+
+    if (words.length === 0) return undefined;
+
+    const matchedFile = ALL_SPEAKER_IMAGES.find(filename => {
+        const fileBase = filename.replace(/\.(png|jpg|jpeg)$/, '');
+        return words.every(w => fileBase.includes(w));
+    });
+
+    if (matchedFile) {
+        return `/speakers/${matchedFile}`;
+    }
+
+    return undefined;
+}
+
 /* ── Result card component ── */
 function ResultCard({ result }: { result: AISearchResult }) {
+    const [imageError, setImageError] = useState(false);
+    
     const typeConfig = {
         palestra: { label: "Palestra", color: "#FF1493", icon: "🎤" },
         preletor: { label: "Preletor", color: "#FF6B35", icon: "👤" },
@@ -334,13 +362,28 @@ function ResultCard({ result }: { result: AISearchResult }) {
     }
     const config = typeConfig[result.type]
 
+    let speakerImage: string | undefined
+    if ((result.type === "palestra" || result.type === "preletor") && !imageError) {
+        const nameToSearch = result.speaker || (result.type === "preletor" ? result.title : undefined)
+        if (nameToSearch) speakerImage = findSpeakerImage(nameToSearch)
+    }
+
     return (
-        <div className="group flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 p-5 transition-all duration-200 text-left w-full">
+        <div className="group flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 p-5 transition-all duration-200 text-left w-full relative overflow-hidden">
             <div
-                className="mt-0.5 shrink-0 flex items-center justify-center w-10 h-10 rounded-lg text-lg"
+                className="mt-0.5 shrink-0 flex items-center justify-center w-10 h-10 rounded-lg text-lg relative overflow-hidden"
                 style={{ backgroundColor: `${config.color}10`, border: `1px solid ${config.color}20` }}
             >
-                {config.icon}
+                {speakerImage ? (
+                    <img 
+                        src={speakerImage} 
+                        alt={result.speaker || "Palestrante"} 
+                        className="w-full h-full object-cover" 
+                        onError={() => setImageError(true)}
+                    />
+                ) : (
+                    config.icon
+                )}
             </div>
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -352,7 +395,7 @@ function ResultCard({ result }: { result: AISearchResult }) {
                         {config.label}
                     </span>
                 </div>
-                <p className="text-white/35 text-xs">{result.subtitle}</p>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{result.subtitle}</p>
                 {result.explanation && (
                     <div className="flex items-start gap-1.5 mt-2 text-xs text-white/25 leading-relaxed">
                         <Lightbulb size={12} className="mt-0.5 shrink-0 text-[#eab308]/50" />

@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { useNavigate } from "react-router-dom"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
@@ -18,7 +19,16 @@ export function DashboardScreen() {
     const { user } = useAuth()
     const { hasDiagnostico, latestResult } = useDiagnostico()
     const { trilhas, totalWatched, getProgress, completedCount } = useTrilhas()
-    const { stars, streakDays } = useGamificacao()
+    const { stars, streakDays, updateStreak, loadGamificacao } = useGamificacao()
+    const { loadHistory } = useDiagnostico()
+    const { loadTrilhas } = useTrilhas()
+
+    useEffect(() => {
+        loadHistory()
+        loadTrilhas()
+        loadGamificacao()
+        updateStreak()
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const firstName = user?.name?.split(" ")[0] ?? "Líder"
 
@@ -198,15 +208,29 @@ function FeatureCard({ icon, title, description, buttonText, gradientColors, onC
     icon: React.ReactNode; title: string; description: string; buttonText: string; gradientColors: string; onClick: () => void
 }) {
     return (
-        <div className="flex flex-col rounded-2xl border border-white/10 bg-[#0a0a3a]/80 backdrop-blur-sm p-6">
+        <div
+            className="flex flex-col rounded-2xl backdrop-blur-sm p-6"
+            style={{
+                backgroundColor: "var(--feature-card-bg)",
+                border: "1px solid var(--surface-border)",
+                boxShadow: "var(--feature-card-shadow, none)",
+            }}
+        >
             <div className="flex items-center gap-3 mb-4">
-                <div className="text-white">{icon}</div>
-                <h3 className="text-white font-semibold text-base">{title}</h3>
+                <div style={{ color: "var(--text-primary)" }}>{icon}</div>
+                <h3 className="font-semibold text-base" style={{ color: "var(--text-primary)" }}>{title}</h3>
             </div>
-            <p className="text-white/40 text-sm text-center leading-relaxed flex-1 flex items-center justify-center">{description}</p>
+            <p className="text-sm text-center leading-relaxed flex-1 flex items-center justify-center" style={{ color: "var(--text-muted)" }}>{description}</p>
             <div className="mt-4 flex justify-center">
                 <div className={`p-[2px] rounded-full bg-gradient-to-r ${gradientColors}`}>
-                    <button onClick={onClick} className="rounded-full bg-[#0a0a3a] px-8 py-2 text-sm font-medium text-white hover:bg-[#0a0a3a]/80 transition-colors">
+                    <button
+                        onClick={onClick}
+                        className="rounded-full px-8 py-2 text-sm font-medium transition-colors"
+                        style={{
+                            backgroundColor: "var(--feature-card-btn-bg)",
+                            color: "var(--text-primary)",
+                        }}
+                    >
                         {buttonText}
                     </button>
                 </div>

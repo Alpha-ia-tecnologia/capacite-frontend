@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
@@ -32,7 +32,11 @@ const ORG_LABELS: Record<OrganizationType, string> = {
 
 export function AdminScreen() {
     const navigate = useNavigate()
-    const { isAdmin, allUsers, updateUserById, deleteUser } = useAuth()
+    const { isAdmin, allUsers, loadUsers, updateUserById, addUser, deleteUser } = useAuth()
+
+    useEffect(() => {
+        if (isAdmin) loadUsers()
+    }, [isAdmin, loadUsers])
 
     const [search, setSearch] = useState("")
     const [sortField, setSortField] = useState<SortField>("createdAt")
@@ -41,7 +45,7 @@ export function AdminScreen() {
     const [editForm, setEditForm] = useState<Partial<User>>({})
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
     const [showAddForm, setShowAddForm] = useState(false)
-    const [newUser, setNewUser] = useState({ name: "", email: "", organization: "", organizationType: "empresa" as OrganizationType })
+    const [newUser, setNewUser] = useState({ name: "", email: "", password: "", organization: "", organizationType: "empresa" as OrganizationType })
 
     // Guard: only admins
     if (!isAdmin) {
@@ -105,32 +109,21 @@ export function AdminScreen() {
         setDeleteConfirm(null)
     }
 
-    const handleAddUser = () => {
-        if (!newUser.name || !newUser.email) return
-        const u: User = {
-            id: crypto.randomUUID(),
-            name: newUser.name,
-            email: newUser.email,
-            phone: "",
-            organization: newUser.organization,
-            organizationType: newUser.organizationType,
-            role: "Líder",
-            location: "",
-            avatarUrl: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? "men" : "women"}/${Math.floor(Math.random() * 70)}.jpg`,
-            createdAt: new Date().toISOString(),
-            streakDays: 0,
-            lastActiveDate: new Date().toISOString().split("T")[0],
-            isAdmin: false,
+    const handleAddUser = async () => {
+        if (!newUser.name || !newUser.email || !newUser.password) return
+        try {
+            await addUser({
+                name: newUser.name,
+                email: newUser.email,
+                password: newUser.password,
+                organization: newUser.organization,
+                organizationType: newUser.organizationType
+            })
+            setShowAddForm(false)
+            setNewUser({ name: "", email: "", password: "", organization: "", organizationType: "empresa" })
+        } catch (err) {
+            alert("Erro ao criar usuário. Verifique se o e-mail já existe.")
         }
-        updateUserById(u.id, u)
-        // Also push directly since updateUserById only updates existing
-        // For new user we need to set via allUsers
-        // Actually, we can use the register-like mechanism... Let's just manipulate localStorage directly
-        const stored = JSON.parse(localStorage.getItem("capacite_all_users") || "[]") as User[]
-        stored.push(u)
-        localStorage.setItem("capacite_all_users", JSON.stringify(stored))
-        // Force refresh
-        window.location.reload()
     }
 
     // Stats
@@ -220,7 +213,7 @@ export function AdminScreen() {
                             <UserPlus size={16} className="text-[#FF1493]" />
                             Adicionar Novo Usuário
                         </h3>
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="grid grid-cols-5 gap-3">
                             <input
                                 value={newUser.name}
                                 onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))}
@@ -231,6 +224,12 @@ export function AdminScreen() {
                                 value={newUser.email}
                                 onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))}
                                 placeholder="Email"
+                                className="bg-white/[0.03] border border-white/8 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 outline-none focus:border-white/15"
+                            />
+                            <input
+                                value={newUser.password}
+                                onChange={e => setNewUser(p => ({ ...p, password: e.target.value }))}
+                                placeholder="Senha provisória"
                                 className="bg-white/[0.03] border border-white/8 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 outline-none focus:border-white/15"
                             />
                             <input
@@ -251,8 +250,8 @@ export function AdminScreen() {
                                 </select>
                                 <button
                                     onClick={handleAddUser}
-                                    disabled={!newUser.name || !newUser.email}
-                                    className="rounded-lg bg-emerald-500/20 text-emerald-400 px-3 hover:bg-emerald-500/30 transition-colors disabled:opacity-30"
+                                    disabled={!newUser.name || !newUser.email || !newUser.password}
+                                    className="rounded-lg bg-emerald-500/20 text-emerald-400 px-3 hover:bg-emerald-500/30 transition-colors disabled:opacity-30 flex-shrink-0"
                                 >
                                     <Check size={16} />
                                 </button>
