@@ -209,8 +209,11 @@ export function DiagnosticoScreen() {
                                         </div>
                                     </div>
                                     <span className="text-xs font-bold" style={{ color }}>{s.score}/12</span>
+                                    <span className="block text-[9px] uppercase font-bold tracking-wider mt-0.5" style={{ color: color, opacity: 0.8 }}>
+                                        {level}
+                                    </span>
                                     {isPriority && (
-                                        <span className="block text-[8px] font-bold text-[#FF1493] mt-1 uppercase tracking-wider">
+                                        <span className="block text-[8px] font-bold text-white mt-1.5 uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#FF1493]/20 border border-[#FF1493]/30 w-max mx-auto">
                                             {s.categoryId === latestResult.priority1 ? "Prioridade 1" : "Prioridade 2"}
                                         </span>
                                     )}
