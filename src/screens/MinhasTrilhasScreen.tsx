@@ -256,9 +256,9 @@ export function MinhasTrilhasScreen() {
                                                     )}>
                                                         <div className="flex items-center gap-3 mb-1">
                                                             {speakerImg ? (
-                                                                <img src={speakerImg} alt={palestra.speaker} className="w-24 h-24 rounded-full object-cover" />
+                                                                <img src={speakerImg} alt={palestra.speaker} className="w-24 h-24 rounded-lg object-cover" />
                                                             ) : (
-                                                                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center text-white/30 text-xs">🎤</div>
+                                                                <div className="w-24 h-24 rounded-lg bg-white/10 flex items-center justify-center text-white/30 text-xs">🎤</div>
                                                             )}
                                                             <div className="flex-1">
                                                                 <span className="text-sm font-medium text-white block">{palestra.title}</span>
@@ -468,9 +468,9 @@ function CreateTrilhaModal({ onClose, onCreate }: { onClose: () => void; onCreat
                                         </div>
 
                                         {speakerImg ? (
-                                            <img src={speakerImg} alt={p.speaker} className="w-24 h-24 rounded-full object-cover shrink-0" />
+                                            <img src={speakerImg} alt={p.speaker} className="w-24 h-24 rounded-lg object-cover shrink-0" />
                                         ) : (
-                                            <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center text-xs text-white/30 shrink-0">🎤</div>
+                                            <div className="w-24 h-24 rounded-lg bg-white/10 flex items-center justify-center text-xs text-white/30 shrink-0">🎤</div>
                                         )}
 
                                         <div className="flex-1 min-w-0">

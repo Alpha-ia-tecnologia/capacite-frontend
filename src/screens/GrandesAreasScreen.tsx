@@ -152,7 +152,7 @@ export function GrandesAreasScreen() {
                                         <div className="flex flex-col gap-2">
                                             {palestras.map(p => (
                                                 <div key={p.id} className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3 hover:bg-white/[0.04] transition-colors">
-                                                    <img src={p.speakerAvatar} alt={p.speaker} className="w-24 h-24 rounded-full object-cover" />
+                                                    <img src={p.speakerAvatar} alt={p.speaker} className="w-24 h-24 rounded-lg object-cover" />
                                                     <div className="flex-1">
                                                         <span className="text-sm font-medium text-white block">{p.title}</span>
                                                         <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{p.speaker} • {p.duration}</span>
