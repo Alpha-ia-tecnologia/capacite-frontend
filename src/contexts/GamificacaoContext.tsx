@@ -74,14 +74,8 @@ export function GamificacaoProvider({ children }: { children: ReactNode }) {
         }
 
         setStars(prev => [...prev, newStar])
-        setPendingNotification({
-            id: crypto.randomUUID(),
-            type: "star",
-            title: "Estrela Dourada!",
-            message: `${def.title}: ${def.description}. Você merece!`,
-            read: false,
-            createdAt: new Date().toISOString(),
-        })
+        // Notification removed as per user request
+
 
         // Notify backend asynchronously
         gamApi.checkStars().catch(() => {})
