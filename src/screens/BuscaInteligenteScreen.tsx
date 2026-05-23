@@ -15,6 +15,7 @@ import {
     AlertCircle,
     Lightbulb,
 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
 
 /* ─── Static data ─── */
 const TRENDING_TOPICS = [
@@ -53,6 +54,7 @@ function buildCatalogContext(): string {
 const CATALOG_CTX = buildCatalogContext()
 
 export function BuscaInteligenteScreen() {
+    const navigate = useNavigate()
     const [query, setQuery] = useState("")
     const [isSearching, setIsSearching] = useState(false)
     const [results, setResults] = useState<AISearchResult[]>([])
@@ -307,7 +309,11 @@ export function BuscaInteligenteScreen() {
                             </span>
                             <div className="flex flex-col gap-3">
                                 {filteredResults.map((result, idx) => (
-                                    <ResultCard key={idx} result={result} />
+                                    <ResultCard
+                                        key={idx}
+                                        result={result}
+                                        onOpen={result.type === "palestra" && result.palestraId ? () => navigate(`/palestras/${result.palestraId}`) : undefined}
+                                    />
                                 ))}
                             </div>
                         </div>
@@ -351,7 +357,7 @@ function findSpeakerImage(speakerName: string): string | undefined {
 }
 
 /* ── Result card component ── */
-function ResultCard({ result }: { result: AISearchResult }) {
+function ResultCard({ result, onOpen }: { result: AISearchResult; onOpen?: () => void }) {
     const [imageError, setImageError] = useState(false);
     
     const typeConfig = {
@@ -368,8 +374,8 @@ function ResultCard({ result }: { result: AISearchResult }) {
         if (nameToSearch) speakerImage = findSpeakerImage(nameToSearch)
     }
 
-    return (
-        <div className="group flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 p-5 transition-all duration-200 text-left w-full relative overflow-hidden">
+    const content = (
+        <>
             <div
                 className="mt-0.5 shrink-0 flex items-center justify-center w-10 h-10 rounded-lg text-lg relative overflow-hidden"
                 style={{ backgroundColor: `${config.color}10`, border: `1px solid ${config.color}20` }}
@@ -412,6 +418,22 @@ function ResultCard({ result }: { result: AISearchResult }) {
                 </div>
                 <ArrowRight size={16} className="text-white/10 group-hover:text-white/40 group-hover:translate-x-1 transition-all duration-200" />
             </div>
+        </>
+    )
+
+    const className = "group flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 p-5 transition-all duration-200 text-left w-full relative overflow-hidden"
+
+    if (onOpen) {
+        return (
+            <button type="button" onClick={onOpen} className={className}>
+                {content}
+            </button>
+        )
+    }
+
+    return (
+        <div className={className}>
+            {content}
         </div>
     )
 }

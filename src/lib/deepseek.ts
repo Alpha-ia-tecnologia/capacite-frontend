@@ -1,17 +1,8 @@
-/**
- * DeepSeek AI Service — CAPACITE Platform
- * Proxied through the backend API to protect the API key.
- * Falls back to direct API calls only if backend is unavailable.
- */
-
 import { ai as aiApi } from "@/lib/api"
-
-/* ────────────────────────────────────────────
- * BUSCA INTELIGENTE — AI-Powered Search
- * ──────────────────────────────────────────── */
 
 export interface AISearchResult {
     type: "palestra" | "preletor" | "tema" | "insight"
+    palestraId?: string
     title: string
     subtitle: string
     relevance: number
@@ -38,47 +29,88 @@ function deduplicateResults(results: AISearchResult[]): AISearchResult[] {
     })
 }
 
+function cleanAIText(text: string) {
+    return text.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim()
+}
+
+function extractJSONObject(text: string): unknown | null {
+    const cleaned = cleanAIText(text)
+
+    try {
+        return JSON.parse(cleaned)
+    } catch {
+        // Some model responses include prose before or after the JSON payload.
+    }
+
+    const start = cleaned.indexOf("{")
+    const end = cleaned.lastIndexOf("}")
+    if (start === -1 || end === -1 || end <= start) return null
+
+    try {
+        return JSON.parse(cleaned.slice(start, end + 1))
+    } catch {
+        return null
+    }
+}
+
+function getResultExplanation(result: any): string {
+    if (typeof result.explanation === "string" && result.explanation.trim()) {
+        return result.explanation.trim()
+    }
+
+    if (typeof result.relevance === "string" && result.relevance.trim()) {
+        return result.relevance.trim()
+    }
+
+    return "Sem descricao"
+}
+
+function getResultRelevance(result: any): number {
+    if (typeof result.score === "number") return result.score
+    if (typeof result.relevanceScore === "number") return result.relevanceScore
+    if (typeof result.relevance === "number") return result.relevance
+
+    const parsed = parseInt(String(result.relevance ?? ""), 10)
+    return Number.isFinite(parsed) ? parsed : 90
+}
+
+function mapBackendResults(results: any[]): AISearchResult[] {
+    return deduplicateResults(results.map(r => ({
+        type: mapResultType(r.type),
+        palestraId: r.palestraId,
+        title: r.title || "Recomendacao",
+        subtitle: r.speaker ? `${r.speaker} - ${r.categoryName || "Palestra"}` : (r.categoryName || "Sugestao da IA"),
+        relevance: getResultRelevance(r),
+        explanation: getResultExplanation(r),
+        speaker: r.speaker,
+    })))
+}
+
 export async function aiSearch(query: string, _catalogContext?: string): Promise<AISearchResult[]> {
     try {
         const res = await aiApi.search(query)
 
-        // If the response came as structured results from the backend
         if ("results" in res && Array.isArray(res.results)) {
-            return deduplicateResults(res.results.map(r => ({
-                type: mapResultType(r.type),
-                title: r.title,
-                subtitle: r.speaker ? `${r.speaker} — ${r.categoryName}` : (r.categoryName || "Sugestão da IA"),
-                relevance: 90,
-                explanation: r.relevance,
-                speaker: r.speaker,
-            })))
+            return mapBackendResults(res.results)
         }
 
-        // If it came as raw text
         if ("raw" in res) {
-            const rawText = String(res.raw);
-            const cleaned = rawText.replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim();
-            
-            try {
-                const parsed = JSON.parse(cleaned);
-                if (parsed.results && Array.isArray(parsed.results)) {
-                    return deduplicateResults(parsed.results.map((r: any) => ({
-                        type: mapResultType(r.type),
-                        title: r.title || "Recomendação",
-                        subtitle: r.speaker ? `${r.speaker}` : (r.categoryName || "Sugestão da IA"),
-                        relevance: typeof r.relevance === 'number' ? r.relevance : parseInt(r.relevance) || 90,
-                        explanation: typeof r.relevance === 'string' && r.relevance.length > 10 ? r.relevance : (r.explanation || "Sem descrição"),
-                        speaker: r.speaker,
-                    })))
-                }
-            } catch {
-                // Not JSON, or malformed JSON, fall through to text insight
+            const cleaned = cleanAIText(String(res.raw))
+            const parsed = extractJSONObject(cleaned)
+
+            if (
+                parsed &&
+                typeof parsed === "object" &&
+                "results" in parsed &&
+                Array.isArray(parsed.results)
+            ) {
+                return mapBackendResults(parsed.results)
             }
 
             return [{
                 type: "insight",
-                title: "Análise da IA",
-                subtitle: cleaned.length > 200 ? cleaned.slice(0, 200) + "..." : cleaned,
+                title: "Analise da IA",
+                subtitle: cleaned.length > 200 ? `${cleaned.slice(0, 200)}...` : cleaned,
                 relevance: 85,
                 explanation: cleaned,
             }]
@@ -90,10 +122,6 @@ export async function aiSearch(query: string, _catalogContext?: string): Promise
         throw err
     }
 }
-
-/* ────────────────────────────────────────────
- * PERGUNTAS — AI-Powered Question Generation
- * ──────────────────────────────────────────── */
 
 export interface AIQuestion {
     id: string
@@ -111,7 +139,7 @@ export async function generateQuestions(
         const res = await aiApi.generateQuestions(
             palestraTitle,
             palestraSpeaker,
-            palestraCategory ?? "Liderança",
+            palestraCategory ?? "Lideranca",
         )
 
         if ("questions" in res && Array.isArray(res.questions)) {
@@ -124,13 +152,22 @@ export async function generateQuestions(
         }
 
         if ("raw" in res) {
-            // Try parsing the raw response
-            try {
-                const parsed = JSON.parse(String(res.raw).replace(/```json\s*/gi, "").replace(/```\s*/gi, "").trim())
-                if (Array.isArray(parsed)) return parsed
-            } catch {
-                // Fall through to fallback
+            const parsed = extractJSONObject(String(res.raw))
+            if (
+                parsed &&
+                typeof parsed === "object" &&
+                "questions" in parsed &&
+                Array.isArray(parsed.questions)
+            ) {
+                return parsed.questions.map((q: any, i: number) => ({
+                    id: `q${i + 1}`,
+                    text: q.question || q.text || String(q),
+                    type: mapQuestionType(q.type || ""),
+                    difficulty: mapDifficulty(i),
+                }))
             }
+
+            if (Array.isArray(parsed)) return parsed as AIQuestion[]
         }
 
         return fallbackQuestions()
@@ -156,30 +193,24 @@ function mapDifficulty(index: number): AIQuestion["difficulty"] {
 
 function fallbackQuestions(): AIQuestion[] {
     return [
-        { id: "q1", text: "Qual aspecto da palestra mais te impactou e por quê?", type: "reflexao", difficulty: "facil" },
-        { id: "q2", text: "Como você pode aplicar os conceitos apresentados no seu contexto de trabalho?", type: "aplicacao", difficulty: "media" },
-        { id: "q3", text: "Quais desafios você prevê ao implementar as ideias discutidas?", type: "aplicacao", difficulty: "media" },
-        { id: "q4", text: "Compare a abordagem do palestrante com suas experiências anteriores.", type: "reflexao", difficulty: "avancada" },
-        { id: "q5", text: "Discuta com sua equipe: como essas ideias se conectam com a estratégia da organização?", type: "discussao", difficulty: "avancada" },
+        { id: "q1", text: "Qual aspecto da palestra mais te impactou e por que?", type: "reflexao", difficulty: "facil" },
+        { id: "q2", text: "Como voce pode aplicar os conceitos apresentados no seu contexto de trabalho?", type: "aplicacao", difficulty: "media" },
+        { id: "q3", text: "Quais desafios voce preve ao implementar as ideias discutidas?", type: "aplicacao", difficulty: "media" },
+        { id: "q4", text: "Compare a abordagem do palestrante com suas experiencias anteriores.", type: "reflexao", difficulty: "avancada" },
+        { id: "q5", text: "Discuta com sua equipe: como essas ideias se conectam com a estrategia da organizacao?", type: "discussao", difficulty: "avancada" },
     ]
 }
-
-/* ────────────────────────────────────────────
- * DEVOLUTIVA — AI-Powered Diagnostic Feedback
- * ──────────────────────────────────────────── */
 
 export async function generateDevolutiva(
     categoryName: string,
     score: number,
     maxScore: number,
 ): Promise<string> {
-    // Devolutiva is now generated server-side during diagnostico creation
-    // This function is kept for backward compatibility
     const percentage = Math.round((score / maxScore) * 100)
     if (percentage >= 75) {
-        return `${categoryName} é um ponto forte na sua organização. Continue investindo nesta área para manter a excelência.`
+        return `${categoryName} e um ponto forte na sua organizacao. Continue investindo nesta area para manter a excelencia.`
     } else if (percentage >= 50) {
-        return `${categoryName} apresenta nível médio. Há oportunidades claras de crescimento que podem acelerar os resultados da equipe.`
+        return `${categoryName} apresenta nivel medio. Ha oportunidades claras de crescimento que podem acelerar os resultados da equipe.`
     }
-    return `${categoryName} é uma área prioritária de desenvolvimento. As palestras recomendadas vão ajudar a construir uma base sólida nesta competência.`
+    return `${categoryName} e uma area prioritaria de desenvolvimento. As palestras recomendadas vao ajudar a construir uma base solida nesta competencia.`
 }

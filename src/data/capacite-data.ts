@@ -100,7 +100,7 @@ export const DIAGNOSTICO_QUESTIONS: DiagnosticoQuestion[] = [
 
 /* ═══ Palestras Catalog — GLN Summit (148 palestras) ═══ */
 export const PALESTRAS_CATALOG: Palestra[] = [
-    { id: "lp1", title: "O Líder que se Conhece", speaker: "Craig Groeschel", speakerAvatar: "/speakers/craig-groeschel.png", duration: "30 min", description: "O Líder que se Conhece — Craig Groeschel.", categoryIds: ["lideranca-pessoal"], year: 2023, glsnowUrl: "#" },
+    { id: "lp1", title: "O Líder que se Conhece", speaker: "Craig Groeschel", speakerAvatar: "/speakers/craig-groeschel.png", duration: "30 min", description: "O Líder que se Conhece — Craig Groeschel.", categoryIds: ["lideranca-pessoal"], year: 2023, glsnowUrl: "https://www.glsnow.com/_embed/video-player?articleId=505&assetId=1482" },
     { id: "pcc3", title: "O Poder da Vulnerabilidade", speaker: "Patrick Lencioni", speakerAvatar: "/speakers/patrick-lencioni.png", duration: "30 min", description: "O Poder da Vulnerabilidade — Patrick Lencioni.", categoryIds: ["pessoas-cultura-confianca"], year: 2023, glsnowUrl: "#" },
     { id: "ci2", title: "Influência Autêntica", speaker: "John Maxwell", speakerAvatar: "/speakers/john-maxwell.png", duration: "30 min", description: "Influência Autêntica — John Maxwell.", categoryIds: ["comunicacao-influencia"], year: 2023, glsnowUrl: "#" },
     { id: "rse1", title: "Liderança Sustentável", speaker: "Henry Cloud", speakerAvatar: "/speakers/henry-cloud.png", duration: "30 min", description: "Liderança Sustentável — Henry Cloud.", categoryIds: ["resiliencia-saude-bemestar"], year: 2023, glsnowUrl: "#" },

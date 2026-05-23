@@ -9,6 +9,8 @@ import { DashboardScreen } from "./screens/DashboardScreen"
 import { DiagnosticoScreen } from "./screens/DiagnosticoScreen"
 import { BuscaInteligenteScreen } from "./screens/BuscaInteligenteScreen"
 import { PerguntasPalestrasScreen } from "./screens/PerguntasPalestrasScreen"
+import { PalestraDetalheScreen } from "./screens/PalestraDetalheScreen"
+import { PalestraLayoutPreviewScreen } from "./screens/PalestraLayoutPreviewScreen"
 
 import { GrandesAreasScreen } from "./screens/GrandesAreasScreen"
 import { MinhasTrilhasScreen } from "./screens/MinhasTrilhasScreen"
@@ -29,6 +31,8 @@ export function App() {
                 <Route path="/dashboard" element={<DashboardScreen />} />
                 <Route path="/diagnostico" element={<DiagnosticoScreen />} />
                 <Route path="/busca" element={<BuscaInteligenteScreen />} />
+                <Route path="/palestras/preview" element={<PalestraLayoutPreviewScreen />} />
+                <Route path="/palestras/:id" element={<PalestraDetalheScreen />} />
                 <Route path="/perguntas" element={<PerguntasPalestrasScreen />} />
 
                 <Route path="/areas" element={<GrandesAreasScreen />} />

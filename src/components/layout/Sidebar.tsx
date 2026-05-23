@@ -83,7 +83,7 @@ export function Sidebar() {
                 <NavItem to="/dashboard" icon={<Home size={20} />} label="Home" active={location.pathname === "/dashboard"} expanded={expanded} isDark={isDark} />
                 <div className="my-2" />
                 <NavItem to="/diagnostico" icon={<FileEdit size={20} />} label="Diagnóstico" active={location.pathname.startsWith("/diagnostico")} expanded={expanded} isDark={isDark} />
-                <NavItem to="/busca" icon={<Film size={20} />} label="Palestras" active={location.pathname.startsWith("/busca")} expanded={expanded} isDark={isDark} />
+                <NavItem to="/busca" icon={<Film size={20} />} label="Palestras" active={location.pathname.startsWith("/busca") || location.pathname.startsWith("/palestras")} expanded={expanded} isDark={isDark} />
                 <div className="my-4" />
                 <NavItem to="/areas" icon={<LayoutGrid size={20} />} label="Grandes Temas" active={location.pathname.startsWith("/areas")} expanded={expanded} isDark={isDark} />
                 <NavItem to="/trilhas" icon={<CheckCircle size={20} />} label="Minhas Trilhas" active={location.pathname.startsWith("/trilhas")} expanded={expanded} isDark={isDark} />

@@ -347,6 +347,32 @@ export const palestras = {
         return request<Array<{ id: string; title: string; speaker: string; duration: string; description: string; categoryIds: number[]; year: number; glsnowUrl: string }>>("/palestras/catalog")
     },
 
+    getById(id: string) {
+        return request<{
+            id: string
+            dbId: string
+            title: string
+            speaker: string
+            description: string
+            duration: string
+            categoryIds: Array<string | number>
+            year: number
+            glsnowUrl: string
+            summary: string | null
+            keyTopics: string[] | null
+            keyQuotes: string[] | null
+            isProcessed: boolean
+            speakerProfile: {
+                name: string
+                bio: string | null
+                photoUrl: string | null
+                expertise: string[] | null
+                country: string | null
+                website: string | null
+            } | null
+        }>(`/palestras/${id}`)
+    },
+
     getCategories() {
         return request<Array<{ id: number; name: string; questionIds: number[] }>>("/palestras/categories")
     },

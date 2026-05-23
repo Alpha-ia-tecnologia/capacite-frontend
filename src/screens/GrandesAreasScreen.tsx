@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
+import { PalestraPlayerModal } from "@/components/palestras/PalestraPlayerModal"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
 import { CATEGORIES, getPalestrasByCategory } from "@/data/capacite-data"
 import { getStrengthLevel, getStrengthColor } from "@/lib/diagnostico-scoring"
@@ -9,6 +10,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useNavigate } from "react-router-dom"
+import type { Palestra } from "@/types"
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     Crown: <Crown size={22} />, Users: <Users size={22} />, MessageSquare: <MessageSquare size={22} />,
@@ -16,11 +18,16 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     Compass: <Compass size={22} />,
 }
 
+function hasPalestraEmbed(palestra: Palestra) {
+    return Boolean(palestra.glsnowUrl && palestra.glsnowUrl !== "#")
+}
+
 export function GrandesAreasScreen() {
     const navigate = useNavigate()
     const { latestResult, hasDiagnostico } = useDiagnostico()
     const [search, setSearch] = useState("")
     const [selectedArea, setSelectedArea] = useState<string | null>(null)
+    const [playingPalestra, setPlayingPalestra] = useState<Palestra | null>(null)
 
     const filteredCategories = CATEGORIES.filter(cat =>
         cat.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -157,14 +164,24 @@ export function GrandesAreasScreen() {
                                                         <span className="text-sm font-medium text-white block">{p.title}</span>
                                                         <span className="text-[10px]" style={{ color: 'var(--text-secondary)' }}>{p.speaker} • {p.duration}</span>
                                                     </div>
-                                                    <a
-                                                        href="https://globalleadership.com.br/"
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-white/40 border border-white/5 hover:bg-white/5 transition-colors"
-                                                    >
-                                                        <Play size={10} /> Assistir
-                                                    </a>
+                                                    {hasPalestraEmbed(p) ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPlayingPalestra(p)}
+                                                            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-white/40 border border-white/5 hover:bg-white/5 transition-colors"
+                                                        >
+                                                            <Play size={10} /> Assistir
+                                                        </button>
+                                                    ) : (
+                                                        <a
+                                                            href="https://globalleadership.com.br/"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-white/40 border border-white/5 hover:bg-white/5 transition-colors"
+                                                        >
+                                                            <Play size={10} /> Assistir
+                                                        </a>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -174,6 +191,7 @@ export function GrandesAreasScreen() {
                         )
                     })}
                 </div>
+                {playingPalestra && <PalestraPlayerModal palestra={playingPalestra} onClose={() => setPlayingPalestra(null)} />}
             </div>
         </AppLayout>
     )

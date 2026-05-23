@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
+import { PalestraPlayerModal } from "@/components/palestras/PalestraPlayerModal"
 import { useTrilhas } from "@/contexts/TrilhasContext"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
 import { useGamificacao } from "@/contexts/GamificacaoContext"
@@ -11,7 +12,7 @@ import {
     ArrowRight, Trophy, Plus, X, Search, Layers,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Trilha } from "@/types"
+import type { Palestra, Trilha } from "@/types"
 
 type Tab = "all" | "active" | "completed"
 
@@ -31,6 +32,10 @@ function findSpeakerImage(speakerName: string): string | undefined {
     return matchedFile ? `/speakers/${matchedFile}` : undefined
 }
 
+function hasPalestraEmbed(palestra: Palestra) {
+    return Boolean(palestra.glsnowUrl && palestra.glsnowUrl !== "#")
+}
+
 export function MinhasTrilhasScreen() {
     const navigate = useNavigate()
     const { trilhas, progress, getProgress, isPalestraWatched, markPalestraWatched, completedCount, enrollTrilha, loadTrilhas } = useTrilhas()
@@ -39,6 +44,7 @@ export function MinhasTrilhasScreen() {
     const [tab, setTab] = useState<Tab>("all")
     const [selectedTrilha, setSelectedTrilha] = useState<string | null>(trilhas[0]?.id ?? null)
     const [showCreateModal, setShowCreateModal] = useState(false)
+    const [playingPalestra, setPlayingPalestra] = useState<Palestra | null>(null)
 
     // Load trilhas from API on mount (needed for page refresh)
     useEffect(() => {
@@ -275,14 +281,24 @@ export function MinhasTrilhasScreen() {
                                                                     <CheckCircle size={10} /> Marcar como assistida
                                                                 </button>
                                                             )}
-                                                            <a
-                                                                href="https://globalleadership.com.br/"
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-[#FF1493]/60 border border-[#FF1493]/10 hover:bg-[#FF1493]/5 transition-colors"
-                                                            >
-                                                                <ExternalLink size={10} /> Assistir
-                                                            </a>
+                                                            {hasPalestraEmbed(palestra) ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setPlayingPalestra(palestra)}
+                                                                    className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-[#FF1493]/60 border border-[#FF1493]/10 hover:bg-[#FF1493]/5 transition-colors"
+                                                                >
+                                                                    <Play size={10} /> Assistir
+                                                                </button>
+                                                            ) : (
+                                                                <a
+                                                                    href="https://globalleadership.com.br/"
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-[10px] font-semibold text-[#FF1493]/60 border border-[#FF1493]/10 hover:bg-[#FF1493]/5 transition-colors"
+                                                                >
+                                                                    <ExternalLink size={10} /> Assistir
+                                                                </a>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -300,6 +316,7 @@ export function MinhasTrilhasScreen() {
                 </div>
             </div>
             {showCreateModal && <CreateTrilhaModal onClose={() => setShowCreateModal(false)} onCreate={handleCreateTrilha} />}
+            {playingPalestra && <PalestraPlayerModal palestra={playingPalestra} onClose={() => setPlayingPalestra(null)} />}
         </AppLayout>
     )
 }
