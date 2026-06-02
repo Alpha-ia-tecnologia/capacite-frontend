@@ -36,6 +36,47 @@ function hasPalestraEmbed(palestra: Palestra) {
     return Boolean(palestra.glsnowUrl && palestra.glsnowUrl !== "#")
 }
 
+/**
+ * Remove ids que apontam para a mesma palestra (mesma obra: título +
+ * palestrante), preservando o primeiro. Conserta trilhas já salvas no banco
+ * cujo `palestraIds` contém duplicatas (ex.: `lp1` e `p1`, ambos "O Líder que
+ * se Conhece"). Quando há duplicata, prioriza a versão com vídeo embedável.
+ */
+function dedupePalestraIds(ids: string[]): string[] {
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim()
+    const keyOf = (id: string) => {
+        const p = getPalestraById(id)
+        return p ? `${norm(p.title)}::${norm(p.speaker)}` : `id:${id}`
+    }
+
+    const chosen = new Map<string, string>()
+    for (const id of ids) {
+        const key = keyOf(id)
+        const current = chosen.get(key)
+        if (!current) {
+            chosen.set(key, id)
+            continue
+        }
+        // Já existe uma palestra com essa obra: troca para a que tem embed real.
+        const currentPalestra = getPalestraById(current)
+        const candidate = getPalestraById(id)
+        if (candidate && hasPalestraEmbed(candidate) && (!currentPalestra || !hasPalestraEmbed(currentPalestra))) {
+            chosen.set(key, id)
+        }
+    }
+
+    // Mantém a ordem da primeira aparição de cada obra.
+    const seen = new Set<string>()
+    const result: string[] = []
+    for (const id of ids) {
+        const key = keyOf(id)
+        if (seen.has(key)) continue
+        seen.add(key)
+        result.push(chosen.get(key) ?? id)
+    }
+    return result
+}
+
 export function MinhasTrilhasScreen() {
     const navigate = useNavigate()
     const { trilhas, progress, getProgress, isPalestraWatched, markPalestraWatched, completedCount, enrollTrilha, loadTrilhas } = useTrilhas()
@@ -233,7 +274,7 @@ export function MinhasTrilhasScreen() {
                                 {/* Palestra list as timeline */}
                                 <div className="flex-1 overflow-y-auto px-6 py-4">
                                     <div className="flex flex-col">
-                                        {palIds.map((pid, idx) => {
+                                        {dedupePalestraIds(palIds).map((pid, idx, palIds) => {
                                             const palestra = getPalestraById(pid)
                                             if (!palestra) return null
                                             const watched = isPalestraWatched(activeTrilha.id, pid)

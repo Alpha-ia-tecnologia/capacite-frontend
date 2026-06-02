@@ -1,4 +1,4 @@
-import type { CategoryScore, DiagnosticoAnswer, Trilha, TrilhaType } from "@/types"
+import type { CategoryScore, DiagnosticoAnswer, Palestra, Trilha, TrilhaType } from "@/types"
 import { CATEGORIES, DIAGNOSTICO_QUESTIONS, getPalestrasByCategory } from "@/data/capacite-data"
 
 /**
@@ -36,6 +36,28 @@ export function determinePriorities(scores: CategoryScore[]): { priority1: strin
 }
 
 /**
+ * Identifica uma palestra pela "obra" (título + palestrante normalizados),
+ * não pelo id. O catálogo pode ter registros distintos para a mesma palestra
+ * (ex.: `lp1` e `p1` são ambos "O Líder que se Conhece" de Craig Groeschel),
+ * então a dedup precisa olhar o conteúdo, não o id.
+ */
+function talkKey(p: Palestra): string {
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim()
+    return `${norm(p.title)}::${norm(p.speaker)}`
+}
+
+/** Remove palestras repetidas (mesma obra), preservando a primeira ocorrência. */
+function dedupeByTalk(palestras: Palestra[]): Palestra[] {
+    const seen = new Set<string>()
+    return palestras.filter(p => {
+        const key = talkKey(p)
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+    })
+}
+
+/**
  * Generate two suggested trilhas based on priorities.
  * - Trilha 1: "Impacto Rápido" — shorter, action-oriented palestras
  * - Trilha 2: "Aprofundamento" — reflective, deeper palestras
@@ -45,19 +67,23 @@ export function generateTrilhaSuggestions(
     priority2: string | null
 ): [Trilha, Trilha] {
     const now = new Date().toISOString()
-    const primaryPalestras = getPalestrasByCategory(priority1)
+    // Deduplica por obra logo na origem, para que os slices abaixo nunca peguem
+    // a mesma palestra duas vezes (causa da duplicação nas trilhas sugeridas).
+    const primaryPalestras = dedupeByTalk(getPalestrasByCategory(priority1))
     const secondaryPalestras = priority2
-        ? getPalestrasByCategory(priority2)
+        ? dedupeByTalk(getPalestrasByCategory(priority2))
         : []
 
     // Trilha 1: Impacto Rápido — first 3 from primary + 1 from secondary
-    const t1Palestras = [...primaryPalestras.slice(0, 3)]
-    if (secondaryPalestras.length > 0) t1Palestras.push(secondaryPalestras[0])
+    const t1Palestras = dedupeByTalk([
+        ...primaryPalestras.slice(0, 3),
+        ...(secondaryPalestras.length > 0 ? [secondaryPalestras[0]] : []),
+    ])
 
     // Trilha 2: Aprofundamento — mix with more reflection (reverse order, secondary first)
-    const t2Palestras = priority2
+    const t2Palestras = dedupeByTalk(priority2
         ? [...secondaryPalestras.slice(0, 2), ...primaryPalestras.slice(1, 3)]
-        : [...primaryPalestras.slice(0, 2), ...primaryPalestras.slice(2, 3)]
+        : [...primaryPalestras.slice(0, 2), ...primaryPalestras.slice(2, 3)])
 
     const cat1 = CATEGORIES.find(c => c.id === priority1)!
 
