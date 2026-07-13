@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
 import type { Trilha, TrilhaProgress } from "@/types"
 import { trilhas as trilhasApi, type ApiTrilha } from "@/lib/api"
+import { getPalestraById } from "@/data/capacite-data"
 
 interface TrilhasState {
     /** User's enrolled trilhas */
@@ -32,11 +33,16 @@ function apiTrilhaTypeToLocal(type: string): "impacto" | "aprofundamento" | "cus
 }
 
 function apiToTrilha(api: ApiTrilha): { trilha: Trilha; prog: TrilhaProgress } {
+    // Trilhas antigas podem referenciar palestras que não existem mais no
+    // catálogo (ex.: mocks removidos) — sem o filtro, o progresso conta ids
+    // órfãos e a trilha fica incompletável.
+    const validIds = (api.palestraIds as string[]).filter(id => getPalestraById(id))
+
     const watchedIds = api.progress
-        ?.filter(p => p.watched)
+        ?.filter(p => p.watched && validIds.includes(p.palestraId))
         .map(p => p.palestraId) ?? []
 
-    const isComplete = api.isComplete ?? (api.palestraIds.length > 0 && watchedIds.length === api.palestraIds.length)
+    const isComplete = api.isComplete ?? (validIds.length > 0 && watchedIds.length === validIds.length)
 
     return {
         trilha: {
@@ -45,7 +51,7 @@ function apiToTrilha(api: ApiTrilha): { trilha: Trilha; prog: TrilhaProgress } {
             description: api.description ?? "",
             type: apiTrilhaTypeToLocal(api.type),
             categoryId: "", // Will be derived from palestras if needed
-            palestraIds: api.palestraIds as string[],
+            palestraIds: validIds,
             createdAt: api.createdAt,
         },
         prog: {
@@ -65,7 +71,8 @@ export function TrilhasProvider({ children }: { children: ReactNode }) {
     const loadTrilhas = useCallback(async () => {
         try {
             const apiList = await trilhasApi.list()
-            const results = apiList.map(apiToTrilha)
+            // Descarta trilhas cujas palestras não existem mais no catálogo
+            const results = apiList.map(apiToTrilha).filter(r => r.trilha.palestraIds.length > 0)
 
             // Deduplicate: keep only the first trilha per name+type
             const seen = new Map<string, typeof results[0]>()
