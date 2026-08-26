@@ -53,6 +53,51 @@ function extractJSONObject(text: string): unknown | null {
     }
 }
 
+/**
+ * Recupera resultados de um JSON truncado pelo modelo: varre o texto coletando
+ * objetos {...} balanceados (ignorando chaves dentro de strings) e parseia
+ * cada um individualmente, descartando o objeto incompleto do final.
+ */
+function salvageTruncatedResults(text: string): any[] {
+    const startArr = text.indexOf("[")
+    if (startArr === -1) return []
+
+    const objects: any[] = []
+    let depth = 0
+    let objStart = -1
+    let inString = false
+    let escaped = false
+
+    for (let i = startArr; i < text.length; i++) {
+        const ch = text[i]
+        if (inString) {
+            if (escaped) escaped = false
+            else if (ch === "\\") escaped = true
+            else if (ch === '"') inString = false
+            continue
+        }
+        if (ch === '"') { inString = true; continue }
+        if (ch === "{") {
+            if (depth === 0) objStart = i
+            depth++
+        } else if (ch === "}") {
+            depth--
+            if (depth === 0 && objStart !== -1) {
+                try {
+                    const obj = JSON.parse(text.slice(objStart, i + 1))
+                    if (obj && typeof obj === "object" && typeof obj.title === "string") {
+                        objects.push(obj)
+                    }
+                } catch {
+                    // objeto inválido — ignora
+                }
+                objStart = -1
+            }
+        }
+    }
+    return objects
+}
+
 function getResultExplanation(result: any): string {
     if (typeof result.explanation === "string" && result.explanation.trim()) {
         return result.explanation.trim()
@@ -105,6 +150,12 @@ export async function aiSearch(query: string, _catalogContext?: string): Promise
                 Array.isArray(parsed.results)
             ) {
                 return mapBackendResults(parsed.results)
+            }
+
+            // Resposta truncada pelo modelo: recupera os objetos completos.
+            const salvaged = salvageTruncatedResults(cleaned)
+            if (salvaged.length > 0) {
+                return mapBackendResults(salvaged)
             }
 
             return [{

@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from "react"
 import Hls from "hls.js"
 import { Loader2, Volume2, VolumeX, X } from "lucide-react"
 import type { Palestra } from "@/types"
-import { parseGlsEmbed, resolveGlsStream } from "@/lib/glsnow-stream"
+import { parseGlsEmbed, resolveGlsStream, type GlsSubtitle } from "@/lib/glsnow-stream"
+
+/** Locale preferido para áudio (dublagem) e legendas. */
+const PREFERRED_LOCALE = "pt"
+
+function isPreferredLocale(value: string | undefined | null): boolean {
+    if (!value) return false
+    const v = value.toLowerCase()
+    return v.startsWith(PREFERRED_LOCALE) || v.includes("portugu")
+}
 
 interface PalestraPlayerModalProps {
     palestra: Pick<Palestra, "title" | "speaker" | "duration" | "glsnowUrl">
@@ -76,6 +85,7 @@ function PalestraVideoSurface({ palestra }: { palestra: PalestraPlayerModalProps
     const videoRef = useRef<HTMLVideoElement>(null)
     const [status, setStatus] = useState<"loading" | "playing" | "fallback">("loading")
     const [isMuted, setIsMuted] = useState(true)
+    const [subtitles, setSubtitles] = useState<GlsSubtitle[]>([])
 
     useEffect(() => {
         const embed = parseGlsEmbed(palestra.glsnowUrl)
@@ -93,6 +103,12 @@ function PalestraVideoSurface({ palestra }: { palestra: PalestraPlayerModalProps
                 if (cancelled) return
                 const video = videoRef.current
                 if (!video) return
+
+                // A API pode repetir o mesmo locale (ex.: "zh" duas vezes);
+                // mantém apenas a primeira ocorrência de cada um.
+                setSubtitles(stream.subtitles.filter(
+                    (s, i, arr) => arr.findIndex(x => x.locale === s.locale) === i
+                ))
 
                 const startPlayback = () => {
                     // Tenta com áudio primeiro (a abertura do modal veio de um clique
@@ -115,6 +131,17 @@ function PalestraVideoSurface({ palestra }: { palestra: PalestraPlayerModalProps
                     hls.loadSource(stream.hlsUrl)
                     hls.attachMedia(video)
                     hls.on(Hls.Events.MANIFEST_PARSED, startPlayback)
+                    // Quando o manifesto traz múltiplas faixas de áudio (original +
+                    // dublagem), seleciona a em português por padrão.
+                    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, () => {
+                        if (!hls) return
+                        const ptIdx = hls.audioTracks.findIndex(t =>
+                            isPreferredLocale(t.lang) || isPreferredLocale(t.name)
+                        )
+                        if (ptIdx >= 0 && hls.audioTrack !== ptIdx) {
+                            hls.audioTrack = ptIdx
+                        }
+                    })
                     hls.on(Hls.Events.ERROR, (_e, data) => {
                         if (data.fatal && !cancelled) setStatus("fallback")
                     })
@@ -136,6 +163,32 @@ function PalestraVideoSurface({ palestra }: { palestra: PalestraPlayerModalProps
             hls?.destroy()
         }
     }, [palestra.glsnowUrl])
+
+    // Ativa a legenda em português por padrão assim que as tracks carregam
+    // (o atributo `default` sozinho não é honrado de forma consistente).
+    useEffect(() => {
+        const video = videoRef.current
+        if (!video || subtitles.length === 0) return
+
+        const applyDefaultSubtitle = () => {
+            const tracks = video.textTracks
+            let ptApplied = false
+            for (let i = 0; i < tracks.length; i++) {
+                const track = tracks[i]
+                if (track.kind !== "subtitles" && track.kind !== "captions") continue
+                if (!ptApplied && isPreferredLocale(track.language) ) {
+                    track.mode = "showing"
+                    ptApplied = true
+                } else {
+                    track.mode = "disabled"
+                }
+            }
+        }
+
+        applyDefaultSubtitle()
+        video.textTracks.addEventListener("addtrack", applyDefaultSubtitle)
+        return () => video.textTracks.removeEventListener("addtrack", applyDefaultSubtitle)
+    }, [subtitles, status])
 
     const toggleMute = () => {
         const video = videoRef.current
@@ -166,7 +219,19 @@ function PalestraVideoSurface({ palestra }: { palestra: PalestraPlayerModalProps
                 autoPlay
                 playsInline
                 muted={isMuted}
-            />
+                crossOrigin="anonymous"
+            >
+                {subtitles.map(s => (
+                    <track
+                        key={s.locale}
+                        kind="subtitles"
+                        src={s.url}
+                        srcLang={s.locale}
+                        label={s.label}
+                        default={isPreferredLocale(s.locale)}
+                    />
+                ))}
+            </video>
 
             {status === "loading" && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black">

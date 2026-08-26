@@ -3,7 +3,6 @@ import { AppLayout } from "@/components/layout/AppLayout"
 import { PalestraPlayerModal } from "@/components/palestras/PalestraPlayerModal"
 import { useTrilhas } from "@/contexts/TrilhasContext"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
-import { useGamificacao } from "@/contexts/GamificacaoContext"
 import { CATEGORIES, getCategoryById, getPalestraById, PALESTRAS_CATALOG } from "@/data/capacite-data"
 import { ALL_SPEAKER_IMAGES } from "@/data/speakers-list"
 import { useNavigate } from "react-router-dom"
@@ -39,8 +38,8 @@ function hasPalestraEmbed(palestra: Palestra) {
 /**
  * Remove ids que apontam para a mesma palestra (mesma obra: título +
  * palestrante), preservando o primeiro. Conserta trilhas já salvas no banco
- * cujo `palestraIds` contém duplicatas (ex.: `lp1` e `p1`, ambos "O Líder que
- * se Conhece"). Quando há duplicata, prioriza a versão com vídeo embedável.
+ * cujo `palestraIds` contém duplicatas de obra (herança dos mocks antigos,
+ * hoje removidos). Quando há duplicata, prioriza a versão com vídeo embedável.
  */
 function dedupePalestraIds(ids: string[]): string[] {
     const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim()
@@ -79,9 +78,8 @@ function dedupePalestraIds(ids: string[]): string[] {
 
 export function MinhasTrilhasScreen() {
     const navigate = useNavigate()
-    const { trilhas, progress, getProgress, isPalestraWatched, markPalestraWatched, completedCount, enrollTrilha, loadTrilhas } = useTrilhas()
+    const { trilhas, progress, getProgress, isPalestraWatched, markPalestraWatched, enrollTrilha, loadTrilhas } = useTrilhas()
     const { hasDiagnostico } = useDiagnostico()
-    const { checkMilestone, hasStar } = useGamificacao()
     const [tab, setTab] = useState<Tab>("all")
     const [selectedTrilha, setSelectedTrilha] = useState<string | null>(trilhas[0]?.id ?? null)
     const [showCreateModal, setShowCreateModal] = useState(false)
@@ -109,25 +107,6 @@ export function MinhasTrilhasScreen() {
 
     const handleMarkWatched = (trilhaId: string, palestraId: string) => {
         markPalestraWatched(trilhaId, palestraId)
-
-        // Check gamification milestones
-        if (!hasStar("primeira_palestra")) {
-            checkMilestone("primeira_palestra")
-        }
-
-        // Check if trilha is now complete
-        const t = trilhas.find(t => t.id === trilhaId)
-        if (t) {
-            const watched = progress[trilhaId]?.watchedPalestraIds ?? []
-            if (watched.length + 1 >= t.palestraIds.length) {
-                checkMilestone("trilha_completa")
-
-                // Check 3 trilhas milestone
-                if (completedCount + 1 >= 3) {
-                    checkMilestone("tres_trilhas")
-                }
-            }
-        }
     }
 
     const handleCreateTrilha = async (trilha: Trilha) => {

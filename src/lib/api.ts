@@ -87,10 +87,8 @@ export interface ApiUser {
     location?: string
     avatarUrl?: string
     isAdmin: boolean
-    streakDays: number
     lastActiveDate?: string
     createdAt: string
-    goldStars?: { type: string; earnedAt: string }[]
     _count?: { diagnosticos: number; trilhas: number }
 }
 
@@ -268,36 +266,6 @@ export const trilhas = {
 
     remove(id: string) {
         return request<{ success: boolean }>(`/trilhas/${id}`, { method: "DELETE" })
-    },
-}
-
-/* ─── Gamificação ─── */
-
-export interface GamificacaoSummary {
-    goldStars: Array<{ type: string; earnedAt: string }>
-    totalStars: number
-    streakDays: number
-    lastActiveDate: string | null
-    totalPalestrasAssistidas: number
-    totalTrilhasCompletas: number
-    totalTrilhas: number
-}
-
-export const gamificacao = {
-    getSummary() {
-        return request<GamificacaoSummary>("/gamificacao")
-    },
-
-    getStars() {
-        return request<Array<{ type: string; earnedAt: string }>>("/gamificacao/stars")
-    },
-
-    checkStars() {
-        return request<{ awarded: string[] }>("/gamificacao/check", { method: "POST" })
-    },
-
-    updateStreak() {
-        return request<{ streakDays: number }>("/gamificacao/streak", { method: "POST" })
     },
 }
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import { ArrowLeft, Clock, Database, Tag, UserRound } from "lucide-react"
+import { ArrowLeft, Clock, Database, Play, Tag, UserRound } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { palestras } from "@/lib/api"
 import { PalestraRichDetail } from "@/components/palestras/PalestraRichDetail"
+import { PalestraPlayerModal } from "@/components/palestras/PalestraPlayerModal"
 import { getRichContent } from "@/data/palestra-rich-content"
 
 type PalestraDetail = Awaited<ReturnType<typeof palestras.getById>>
@@ -18,6 +19,7 @@ export function PalestraDetalheScreen() {
     const [palestra, setPalestra] = useState<PalestraDetail | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isPlaying, setIsPlaying] = useState(false)
 
     useEffect(() => {
         if (!id) return
@@ -36,6 +38,9 @@ export function PalestraDetalheScreen() {
     const topics = asStringList(palestra?.keyTopics)
     const quotes = asStringList(palestra?.keyQuotes)
     const expertise = asStringList(palestra?.speakerProfile?.expertise)
+
+    // Vídeo disponível para embed (carrega no player interno ao clicar em Assistir).
+    const canPlay = Boolean(palestra?.glsnowUrl && palestra.glsnowUrl !== "#")
 
     // Conteúdo editorial rico (tema central, soft skills, takeaways, etc.).
     // Quando existe para esta palestra, renderiza o layout completo.
@@ -56,11 +61,12 @@ export function PalestraDetalheScreen() {
                     </button>
                     <PalestraRichDetail
                         data={richContent}
-                        onPlay={palestra?.glsnowUrl && palestra.glsnowUrl !== "#"
-                            ? () => window.open(palestra.glsnowUrl, "_blank")
-                            : undefined}
+                        onPlay={canPlay ? () => setIsPlaying(true) : undefined}
                     />
                 </div>
+                {isPlaying && palestra && (
+                    <PalestraPlayerModal palestra={palestra} onClose={() => setIsPlaying(false)} />
+                )}
             </AppLayout>
         )
     }
@@ -130,6 +136,16 @@ export function PalestraDetalheScreen() {
                                 <p className="mt-5 max-w-3xl text-base leading-relaxed" style={{ color: "var(--text-secondary)" }}>
                                     {palestra.description}
                                 </p>
+
+                                {canPlay && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPlaying(true)}
+                                        className="mt-6 flex w-fit items-center gap-2 rounded-xl bg-[#FF1493] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#FF1493]/90"
+                                    >
+                                        <Play size={16} /> Assistir
+                                    </button>
+                                )}
                             </div>
                         </section>
 
@@ -186,6 +202,9 @@ export function PalestraDetalheScreen() {
                     </>
                 )}
             </div>
+            {isPlaying && palestra && (
+                <PalestraPlayerModal palestra={palestra} onClose={() => setIsPlaying(false)} />
+            )}
         </AppLayout>
     )
 }

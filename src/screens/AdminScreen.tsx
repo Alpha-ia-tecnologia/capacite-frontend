@@ -313,7 +313,7 @@ export function AdminScreen() {
                                 >
                                     {/* Name */}
                                     <div className="flex items-center gap-3 px-4 py-3">
-                                        <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                                        <UserAvatar name={user.name} avatarUrl={user.avatarUrl} />
                                         <div className="min-w-0">
                                             {isEditing ? (
                                                 <input
@@ -456,5 +456,27 @@ export function AdminScreen() {
                 </div>
             </div>
         </AppLayout>
+    )
+}
+
+/** Avatar do usuário com fallback para a inicial quando não há imagem ou ela falha. */
+function UserAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string }) {
+    const [imageError, setImageError] = useState(false)
+
+    if (avatarUrl && !imageError) {
+        return (
+            <img
+                src={avatarUrl}
+                alt=""
+                className="w-8 h-8 rounded-lg object-cover shrink-0"
+                onError={() => setImageError(true)}
+            />
+        )
+    }
+
+    return (
+        <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center bg-[#8B5CF6]/15 border border-[#8B5CF6]/20 text-xs font-semibold text-[#8B5CF6]">
+            {name.trim().charAt(0).toUpperCase() || "?"}
+        </div>
     )
 }

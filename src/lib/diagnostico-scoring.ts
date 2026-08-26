@@ -37,9 +37,9 @@ export function determinePriorities(scores: CategoryScore[]): { priority1: strin
 
 /**
  * Identifica uma palestra pela "obra" (título + palestrante normalizados),
- * não pelo id. O catálogo pode ter registros distintos para a mesma palestra
- * (ex.: `lp1` e `p1` são ambos "O Líder que se Conhece" de Craig Groeschel),
- * então a dedup precisa olhar o conteúdo, não o id.
+ * não pelo id. Proteção contra registros distintos para a mesma obra no
+ * catálogo (já ocorreu com os mocks antigos `lp1`/`p1`, hoje removidos),
+ * então a dedup olha o conteúdo, não o id.
  */
 function talkKey(p: Palestra): string {
     const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim()

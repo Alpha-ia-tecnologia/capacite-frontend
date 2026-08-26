@@ -3,12 +3,11 @@ import { AppLayout } from "@/components/layout/AppLayout"
 import { useNavigate } from "react-router-dom"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
 import { useTrilhas } from "@/contexts/TrilhasContext"
-import { useGamificacao } from "@/contexts/GamificacaoContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { getCategoryById } from "@/data/capacite-data"
 import { getStrengthLevel, getStrengthColor } from "@/lib/diagnostico-scoring"
 import {
-    Search, ArrowRight, Star, Flame, BookOpen, Clock,
+    Search, ArrowRight, BookOpen, Clock,
     CheckCircle, Zap, FileEdit, MessageCircle,
 } from "lucide-react"
 import officialPartner from "../assets/official-partner.png"
@@ -19,15 +18,12 @@ export function DashboardScreen() {
     const { user } = useAuth()
     const { hasDiagnostico, latestResult } = useDiagnostico()
     const { trilhas, totalWatched, getProgress, completedCount } = useTrilhas()
-    const { stars, streakDays, updateStreak, loadGamificacao } = useGamificacao()
     const { loadHistory } = useDiagnostico()
     const { loadTrilhas } = useTrilhas()
 
     useEffect(() => {
         loadHistory()
         loadTrilhas()
-        loadGamificacao()
-        updateStreak()
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const firstName = user?.name?.split(" ")[0] ?? "Líder"
@@ -44,12 +40,6 @@ export function DashboardScreen() {
                                 ? "Continue sua jornada de capacitação."
                                 : "Bem-vindo à plataforma CAPACITE. Comece seu diagnóstico!"}
                         </p>
-                    </div>
-                    {/* Quick stats */}
-                    <div className="flex items-center gap-4">
-                        <MiniStat icon={<Star size={14} className="text-yellow-400" />} value={stars.length} label="Estrelas" />
-                        <MiniStat icon={<Flame size={14} className="text-orange-400" />} value={`${streakDays}d`} label="Sequência" />
-                        <MiniStat icon={<BookOpen size={14} className="text-blue-400" />} value={totalWatched} label="Palestras" />
                     </div>
                 </div>
 
@@ -72,12 +62,10 @@ export function DashboardScreen() {
                         <ArrowRight size={20} className="text-white/20 group-hover:text-[#FF1493] transition-colors" />
                     </button>
                 ) : (
-                    <div className="grid grid-cols-5 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6">
                         <StatCard icon={<BookOpen size={16} />} value={totalWatched} label="Palestras Assistidas" color="#173DED" />
                         <StatCard icon={<Clock size={16} />} value={`${totalWatched * 30}m`} label="Horas de Aprendizado" color="#8B5CF6" />
                         <StatCard icon={<CheckCircle size={16} />} value={completedCount} label="Trilhas Concluídas" color="#22c55e" />
-                        <StatCard icon={<Star size={16} />} value={stars.length} label="Estrelas Douradas" color="#eab308" />
-                        <StatCard icon={<Flame size={16} />} value={`${streakDays}d`} label="Sequência Ativa" color="#FF6B35" />
                     </div>
                 )}
 
@@ -184,16 +172,6 @@ export function DashboardScreen() {
 }
 
 /* ── Sub-components ── */
-function MiniStat({ icon, value, label }: { icon: React.ReactNode; value: string | number; label: string }) {
-    return (
-        <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-1.5">
-            {icon}
-            <span className="text-sm font-bold text-white">{value}</span>
-            <span className="text-[10px] text-white/20">{label}</span>
-        </div>
-    )
-}
-
 function StatCard({ icon, value, label, color }: { icon: React.ReactNode; value: string | number; label: string; color: string }) {
     return (
         <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">

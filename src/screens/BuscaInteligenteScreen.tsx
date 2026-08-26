@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react"
 import { AppLayout } from "@/components/layout/AppLayout"
-import { CATEGORIES as CAPACITE_CATS, PALESTRAS_CATALOG } from "@/data/capacite-data"
+import { PalestraPlayerModal } from "@/components/palestras/PalestraPlayerModal"
+import { CATEGORIES as CAPACITE_CATS, PALESTRAS_CATALOG, getPalestraById } from "@/data/capacite-data"
 import { aiSearch, type AISearchResult } from "@/lib/deepseek"
 import { ALL_SPEAKER_IMAGES } from "@/data/speakers-list"
+import type { Palestra } from "@/types"
 import {
     Search,
     Sparkles,
@@ -53,6 +55,42 @@ function buildCatalogContext(): string {
 
 const CATALOG_CTX = buildCatalogContext()
 
+/** Normaliza texto para comparação (minúsculas, sem acentos/pontuação). */
+function normalizeText(s: string): string {
+    return s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+}
+
+/**
+ * Resolve o resultado da busca para uma palestra do catálogo:
+ * primeiro pelo id retornado pela IA, senão por título (e palestrante) normalizados.
+ */
+function resolvePalestra(result: AISearchResult): Palestra | undefined {
+    if (result.palestraId) {
+        const byId = getPalestraById(result.palestraId)
+        if (byId) return byId
+    }
+
+    const title = normalizeText(result.title)
+    if (!title) return undefined
+
+    const byTitle = PALESTRAS_CATALOG.filter(p => {
+        const t = normalizeText(p.title)
+        return t === title || t.includes(title) || title.includes(t)
+    })
+    if (byTitle.length === 1) return byTitle[0]
+    if (byTitle.length > 1 && result.speaker) {
+        const speaker = normalizeText(result.speaker)
+        return byTitle.find(p => normalizeText(p.speaker) === speaker) ?? byTitle[0]
+    }
+    return byTitle[0]
+}
+
 export function BuscaInteligenteScreen() {
     const navigate = useNavigate()
     const [query, setQuery] = useState("")
@@ -65,6 +103,7 @@ export function BuscaInteligenteScreen() {
         const saved = localStorage.getItem("capacite_recent_searches")
         return saved ? JSON.parse(saved) : []
     })
+    const [playingPalestra, setPlayingPalestra] = useState<Palestra | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -308,13 +347,24 @@ export function BuscaInteligenteScreen() {
                                 {filteredResults.length} resultado{filteredResults.length !== 1 && "s"} encontrado{filteredResults.length !== 1 && "s"} para "{query}"
                             </span>
                             <div className="flex flex-col gap-3">
-                                {filteredResults.map((result, idx) => (
-                                    <ResultCard
-                                        key={idx}
-                                        result={result}
-                                        onOpen={result.type === "palestra" && result.palestraId ? () => navigate(`/palestras/${result.palestraId}`) : undefined}
-                                    />
-                                ))}
+                                {filteredResults.map((result, idx) => {
+                                    const palestra = result.type === "palestra" ? resolvePalestra(result) : undefined
+                                    const canPlay = Boolean(palestra?.glsnowUrl && palestra.glsnowUrl !== "#")
+                                    const onOpen = palestra
+                                        ? canPlay
+                                            ? () => setPlayingPalestra(palestra)
+                                            : () => navigate(`/palestras/${palestra.id}`)
+                                        : result.type === "palestra" && result.palestraId
+                                            ? () => navigate(`/palestras/${result.palestraId}`)
+                                            : undefined
+                                    return (
+                                        <ResultCard
+                                            key={idx}
+                                            result={result}
+                                            onOpen={onOpen}
+                                        />
+                                    )
+                                })}
                             </div>
                         </div>
                     ) : (
@@ -330,6 +380,7 @@ export function BuscaInteligenteScreen() {
                         </div>
                     )}
                 </div>
+                {playingPalestra && <PalestraPlayerModal palestra={playingPalestra} onClose={() => setPlayingPalestra(null)} />}
             </div>
         </AppLayout>
     )

@@ -34,7 +34,6 @@ function apiUserToUser(u: ApiUser): User {
         location: u.location ?? "",
         avatarUrl: u.avatarUrl ?? "",
         createdAt: u.createdAt,
-        streakDays: u.streakDays,
         lastActiveDate: u.lastActiveDate ?? new Date().toISOString().split("T")[0],
         isAdmin: u.isAdmin,
     }

@@ -2,7 +2,6 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { AppLayout } from "@/components/layout/AppLayout"
 import { useDiagnostico } from "@/contexts/DiagnosticoContext"
-import { useGamificacao } from "@/contexts/GamificacaoContext"
 import { useTrilhas } from "@/contexts/TrilhasContext"
 import { CATEGORIES, DIAGNOSTICO_QUESTIONS, getCategoryById, getPalestraById } from "@/data/capacite-data"
 import { getStrengthLevel, getStrengthColor, generateDevolutiva } from "@/lib/diagnostico-scoring"
@@ -24,7 +23,6 @@ type Phase = "landing" | "questionnaire" | "processing" | "results"
 
 export function DiagnosticoScreen() {
     const { hasDiagnostico, latestResult, submitDiagnostico, suggestedTrilhas } = useDiagnostico()
-    const { checkMilestone } = useGamificacao()
     const { enrollTrilha } = useTrilhas()
     const [phase, setPhase] = useState<Phase>(hasDiagnostico ? "landing" : "landing")
     const [answers, setAnswers] = useState<Record<string, ScaleValue>>({})
@@ -53,7 +51,6 @@ export function DiagnosticoScreen() {
         }))
         submitDiagnostico(answerArr)
             .then(() => {
-                checkMilestone("diagnostico_completo")
                 setPhase("results")
             })
             .catch(() => {

@@ -13,7 +13,6 @@ export interface User {
     location: string
     avatarUrl: string
     createdAt: string
-    streakDays: number
     lastActiveDate: string
     isAdmin?: boolean
 }
@@ -97,33 +96,10 @@ export interface TrilhaProgress {
     completedAt: string | null
 }
 
-/* ─── Gamificação ─── */
-export type StarMilestone =
-    | "diagnostico_completo"
-    | "primeira_palestra"
-    | "trilha_completa"
-    | "diagnostico_6meses"
-    | "tres_trilhas"
-
-export interface GoldStar {
-    milestone: StarMilestone
-    earnedAt: string
-    title: string
-    description: string
-}
-
-export const STAR_DEFINITIONS: Record<StarMilestone, { title: string; description: string }> = {
-    diagnostico_completo: { title: "Primeira Estrela", description: "Completou o diagnóstico" },
-    primeira_palestra: { title: "Segunda Estrela", description: "Assistiu a primeira palestra" },
-    trilha_completa: { title: "Terceira Estrela", description: "Completou uma trilha inteira" },
-    diagnostico_6meses: { title: "Quarta Estrela", description: "Refez o diagnóstico após 6 meses" },
-    tres_trilhas: { title: "Quinta Estrela", description: "Completou 3 trilhas diferentes" },
-}
-
 /* ─── Notifications ─── */
 export interface AppNotification {
     id: string
-    type: "star" | "reminder" | "milestone" | "inactivity"
+    type: "reminder" | "milestone" | "inactivity"
     title: string
     message: string
     read: boolean
